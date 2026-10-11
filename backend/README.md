@@ -4,4 +4,4 @@ This directory contains the Flask application, API endpoints, business rules and
 
 The backend manages discounts, reservations, stock validation, temperature readings and reports.
 
-Status: Planned. Implementation has not started.
+Status: In progress. Initial Flask API, device authentication, temperature validation and SAFE/HOLD refrigerator monitoring have been implemented and manually tested. Database integration, stock reservations and discount logic are pending.
