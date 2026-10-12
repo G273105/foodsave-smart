@@ -86,7 +86,7 @@ def receive_temperature():
 
     # Step 5: Validate temperature.
     if temperature is not None:
-        if type(temperature) not in (int, float):
+        if not isinstance(temperature, (int, float)) or isinstance(temperature, bool):
             return jsonify({
                 "error": "Temperature must be a number"
             }), 400
