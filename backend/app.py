@@ -106,6 +106,11 @@ def receive_temperature():
             "error": "Temperature is required"
         }), 400
 
+    if sensor_status == "error" and temperature is not None:
+        return jsonify({
+            "error": "Temperature must be null when sensor status is error"
+        }), 400
+    
     # Step 6: Store the latest reading.
     reading = {
         "id": device_id,
