@@ -7,6 +7,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
+from db import get_db_connection
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
