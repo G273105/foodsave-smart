@@ -157,3 +157,54 @@ def test_esp32_does_not_change_fridge_status():
     assert "simulator-01" in readings
     assert "esp32-01" in readings
 
+
+def test_missing_temperature_field():
+    client = backend.app.test_client()
+
+    response = client.post(
+        "/api/temperatures",
+        headers={
+            "Authorization": f"Bearer {backend.DEVICE_TOKEN}"
+        },
+        json={
+            "id": "simulator-01",
+            "sensor_status": "ok"
+        }
+    )
+
+    assert response.status_code == 400
+
+
+def test_invalid_sensor_status():
+    client = backend.app.test_client()
+
+    response = client.post(
+        "/api/temperatures",
+        headers={
+            "Authorization": f"Bearer {backend.DEVICE_TOKEN}"
+        },
+        json={
+            "id": "simulator-01",
+            "temperature": 4.6,
+            "sensor_status": "broken"
+        }
+    )
+
+    assert response.status_code == 400
+
+
+def test_invalid_json_payload():
+    client = backend.app.test_client()
+
+    response = client.post(
+        "/api/temperatures",
+        headers={
+            "Authorization": f"Bearer {backend.DEVICE_TOKEN}"
+        },
+        data='{"id": "simulator-01", "temperature": ',
+        content_type="application/json"
+    )
+
+    assert response.status_code == 400
+
+
