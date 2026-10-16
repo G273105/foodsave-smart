@@ -1,287 +1,239 @@
-
 # FoodSave Smart — IoT API Contract
 
-## Backend
-Framework: Python Flask
-Development port: 5000
+## 1. Project Architecture
+
+Backend: Python Flask
+Local development port: 5000
 Database: MySQL
-Database setup file: database/database.sql
+Database name: fridge_db
 
-The Flask backend receives temperature readings, validates
-incoming data and determines the status of Fridge 1.
+The backend receives temperature readings from the simulator and ESP32, validates them, stores them in MySQL, and manages the fridge safety state.
 
-MySQL will provide persistent storage for the application.
+Alex owns the database schema and migrations.
+Laurentiu owns the Flask backend and application data operations through Python.
+Costel owns the simulator, ESP32 and device-side integration.
+Florin owns the frontend.
+Marius owns UX and QA.
 
-## Database Structure
+## 2. Database Structure
 
-The database is prepared by Alex using MySQL.
+The existing eight tables are:
 
-One file, database/database.sql, will contain the table
-definitions, relationships, primary and foreign keys,
-and sample data.
+- storage_locations
+- devices
+- temperature_readings
+- categories
+- batches
+- users
+- reservations
+- alerts
 
-The database consists of eight planned tables:
+Alex must publish the official SQL schema, relationships, constraints, diagram and migration files on his own GitHub branch.
 
-1. storage_locations
-   - location_id
-   - name
-   - location_type
-   - is_active
-   - safety_state
-   - hold_reason
-   - updated_at
+The initial storage location is Fridge 1 with location_id = 1.
 
-2. devices
-   - device_id
-   - location_id
-   - source
-   - is_active
-   - is_primary
+The required default safety state is HOLD, not OK.
 
-3. temperature_readings
-   - reading_id
-   - device_id
-   - temperature_c
-   - sensor_status
-   - received_at
+Laurentiu populates and manages application data through Python.
 
-4. categories
-   - category_id
-   - name
+Existing table and column names must not be changed without prior agreement.
 
-5. batches
-   - batch_id
-   - name
-   - category_id
-   - location_id
-   - allergens_json
-   - original_price_pence
-   - quantity_available
-   - sell_by_at
-   - created_at
-   - availability_status
+## 3. Registered Devices
 
-6. users
-   - user_id
-   - display_name
-   - role
+API device identifiers:
 
-7. reservations
-   - reservation_id
-   - batch_id
-   - user_id
-   - quantity
-   - status
-   - created_at
-   - updated_at
+- simulator-01: SIMULATED; MySQL device_id = 1
+- esp32-01: PHYSICAL; MySQL device_id = 2
 
-8. alerts
-   - alert_id
-   - location_id
-   - batch_id
-   - alert_type
-   - message
-   - status
-   - created_at
-   - resolved_at
+Both devices belong to Fridge 1.
 
-The initial test data will include Fridge 1, two devices,
-sample food categories, products and users.
+The simulator is currently the primary monitoring source. Only simulator-01 changes the fridge safety state.
 
-Reservations and alerts may initially remain empty.
+ESP32 readings are stored but do not change SAFE/HOLD.
 
-The final table definitions and data types will be
-confirmed with Alex before database integration.
+Device IDs and primary-device selection are currently configured in the Flask application.
 
-## Monitoring Devices
-
-Storage location:
-- location_id: 1
-- name: Fridge 1
-
-Registered devices:
-- simulator-01: SIMULATED
-- esp32-01: PHYSICAL
-
-Both devices are associated with Fridge 1.
-
-Both active devices may submit temperature readings.
-Initially, simulator-01 is the primary monitoring source.
-
-Only the primary monitoring source determines the
-current fridge safety status.
-
-## Temperature Endpoint
+## 4. Submit Temperature
 
 POST /api/temperatures
 
 Headers:
+
 Authorization: Bearer <DEVICE_TOKEN>
 Content-Type: application/json
 
-### Simulator Example
+Simulator example:
 
+```json
 {
   "id": "simulator-01",
   "temperature": 4.6,
   "sensor_status": "ok"
 }
+```
 
-### ESP32 Example
+ESP32 example:
 
+```json
 {
   "id": "esp32-01",
-  "temperature": 4.6,
+  "temperature": 24.5,
   "sensor_status": "ok"
 }
+```
 
-### Sensor Error Example
+Sensor error example:
 
+```json
 {
   "id": "simulator-01",
   "temperature": null,
   "sensor_status": "error"
 }
+```
 
-## Temperature Validation Rules
+Only the three agreed JSON fields are required. Humidity is display-only on the ESP32 and is not sent to this endpoint.
 
-- Devices send readings every 30 seconds.
-- Temperature values are measured in Celsius.
-- Valid readings require sensor_status = "ok".
-- Valid temperatures must be JSON numbers.
-- Valid temperatures must be finite.
-- Accepted input range: -50 to 100 degrees Celsius.
-- Sensor errors require sensor_status = "error".
-- Sensor errors require temperature = null.
-- Unknown device IDs are rejected.
-- Invalid authentication tokens are rejected.
-- Only the primary device controls fridge status.
+## 5. Validation
 
-## Demonstration Temperature Rules
+- id must be simulator-01 or esp32-01.
+- sensor_status must be ok or error.
+- With sensor_status = ok, temperature must be a finite JSON number.
+- With sensor_status = error, temperature must be null.
+- Temperature must be between -50 and 100 degrees Celsius.
+- Boolean values are not accepted as temperatures.
+- Invalid or missing Bearer tokens are rejected.
+- The devices should send readings every 30 seconds; the backend does not currently enforce this interval.
 
-- 0 to 5 degrees Celsius: SAFE.
+## 6. Demonstration Safety Rules
+
+- 0 to 5 degrees Celsius inclusive: SAFE.
 - Outside this range: HOLD.
-- Sensor errors from the primary device: HOLD.
-- No valid primary-device reading yet: UNKNOWN.
+- Primary-device sensor error: HOLD.
+- Initial database safety state: HOLD until an accepted simulator reading establishes SAFE or HOLD.
+- ESP32 readings do not change the safety state.
 
-These are provisional demonstration thresholds,
-not certified food-safety limits.
+These are provisional demonstration limits, not certified food-safety thresholds.
 
-## HTTP Responses
+Demonstration cases:
 
-- HTTP 200: Successful status or health request.
-- HTTP 201: Temperature reading accepted.
-- HTTP 400: Invalid JSON, device ID or temperature data.
-- HTTP 401: Invalid or missing device token.
+- simulator-01, 4.6, ok -> SAFE
+- simulator-01, 24.5, ok -> HOLD
+- simulator-01, null, error -> HOLD
+- esp32-01, 24.5, ok -> reading stored, fridge state unchanged
 
-## Health Endpoint
+## 7. Successful Temperature Response
+
+HTTP 201
+
+Example response structure:
+
+```json
+{
+  "message": "Temperature received",
+  "reading": {
+    "id": "simulator-01",
+    "temperature": 4.6,
+    "sensor_status": "ok",
+    "received_at": "<UTC ISO 8601 timestamp>"
+  },
+  "fridge_status": "SAFE"
+}
+```
+
+The received_at field is generated by the backend.
+
+## 8. Health Check
 
 GET /api/health
 
-Returns the current backend health response.
+HTTP 200:
 
-## Fridge Status Endpoint
+```json
+{
+  "status": "ok",
+  "project": "FoodSave Smart",
+  "message": "Backend is running successfully"
+}
+```
+
+This checks that Flask is responding; it does not verify MySQL connectivity.
+
+## 9. Fridge Status
 
 GET /api/fridge/status
 
-Possible fridge status values:
-- UNKNOWN
-- SAFE
-- HOLD
+The endpoint reads safety_state and hold_reason from MySQL.
 
-The response includes:
-- location_id
-- active_device_id
-- status
-- latest_readings
+HTTP 200 response structure:
 
-## MySQL Integration
+```json
+{
+  "location_id": 1,
+  "active_device_id": "simulator-01",
+  "status": "HOLD",
+  "hold_reason": "Awaiting valid simulator temperature",
+  "latest_readings": {}
+}
+```
 
-The Flask backend will connect to the MySQL database.
+This is an illustrative initial-state response. Actual values depend on MySQL and the current Flask process.
 
-The integration will support:
-- Saving temperature readings.
-- Retrieving registered devices.
-- Identifying the primary monitoring device.
-- Reading and updating fridge status.
-- Retrieving products and stock levels.
-- Applying expiry-based discount rules.
-- Creating and managing reservations.
-- Recording and retrieving alerts.
+latest_readings is currently an in-memory cache, not a database query. It may be empty after an application restart.
 
-The backend is responsible for application logic.
+## 10. Error Responses
 
-The frontend communicates with Flask through HTTP APIs
-and does not connect directly to MySQL.
+- HTTP 400: invalid JSON, device identifier, sensor status or temperature.
+- HTTP 401: missing or incorrect device token.
+- HTTP 404: fridge location not found when requesting fridge status.
+- HTTP 503: database operation unavailable.
+- HTTP 201: accepted and stored temperature reading.
+- HTTP 200: successful health or fridge-status request.
 
-The simulator and ESP32 also communicate with Flask,
-not directly with MySQL.
-
-## Current Implementation Status
+## 11. Current Implementation
 
 Implemented:
-- Flask development server.
-- Device token authentication.
-- Temperature endpoint.
+- Flask endpoints for health, temperatures and fridge status.
+- Bearer-token device authentication.
 - JSON and temperature validation.
-- Health endpoint.
-- Fridge status endpoint.
+- MySQL storage of temperature readings.
+- MySQL updates to fridge safety state.
+- Reading fridge safety state from MySQL.
 - SAFE/HOLD demonstration logic.
-- Support for simulator-01 and esp32-01 identifiers.
+- Support for simulator-01 and esp32-01.
+- Database transaction rollback on write failure.
+- Automated backend tests.
 
-Pending:
-- MySQL connection and persistent storage.
-- Database-based device activity checks.
-- Database-based primary device selection.
+Not yet implemented:
+- Loading active device configuration and primary-device selection dynamically from MySQL.
 - Automatic missing-reading detection.
 - Automatic switching between monitoring sources.
-- Product, discount and reservation endpoints.
-- Persistent alerts and reservation blocking.
+- Product, category, discount and reservation APIs.
+- Reservation blocking based on HOLD.
+- Persistent application alerts.
+- Persistent latest_readings response retrieved from MySQL.
+- Public hosting and final remote-device integration.
 
-Temperature readings are currently stored temporarily
-in application memory until MySQL integration is completed.
+## 12. Integration and Security
 
-## Integration Responsibilities
+Local development base URL:
 
-Costel:
-- Simulator and ESP32 implementation.
-- Temperature transmission every 30 seconds.
-- Agreed JSON request format.
-
-Alex:
-- MySQL database structure.
-- Eight database tables and relationships.
-- One database/database.sql file.
-- Sample data and database setup instructions.
-
-Laurentiu:
-- Python Flask backend.
-- API endpoints and validation.
-- MySQL integration.
-- Fridge status and application business rules.
-
-Florin:
-- Frontend implementation.
-- Integration with backend API endpoints.
-
-Marius:
-- UX design and testing.
-- User flows and validation of application behaviour.
-
-## Development and Security
-
-The backend currently runs locally on port 5000.
-
-Local address:
 http://127.0.0.1:5000
 
-127.0.0.1 refers to the computer running Flask.
+This address works only on the computer running Flask. It must not be used by a remote ESP32 or teammate.
 
-Device tokens must be configured through environment
-variables and must not be committed to GitHub.
+The final shared HTTPS base URL will be supplied after deployment.
 
-MySQL credentials must also be stored privately
-and must not be committed to GitHub.
+Costel must use:
 
-The development API must be tested with the MySQL
-database before final integration and demonstration.
+<SHARED_BASE_URL>/api/temperatures
+
+The DEVICE_TOKEN is configured privately and must not be committed to GitHub.
+
+MySQL credentials must also remain private.
+
+The Flask development server must not be exposed directly to the public internet with debug mode enabled.
+
+The frontend, simulator and ESP32 communicate with Flask over HTTP/HTTPS, not directly with MySQL.
+
+Each team member implements, tests, documents and publishes their own component through their GitHub branch and Pull Request.
