@@ -84,6 +84,12 @@ Proposed identifiers:
 
 The backend distinguishes physical and simulated readings and manages the agreed association between devices, storage locations and food batches.
 
+## GitHub guide for team members
+
+Download the [GitHub working procedure](docs/FoodSave_Smart_GitHub_Team_Procedure_EN_GB.docx?raw=true) for step-by-step instructions on branches, file uploads, draft pull requests, reviews and merging.
+
+Each member works on their own branch. Costel coordinates reviews and merges approved contributions into main.
+
 ## Working process
 
 1. Create or select a GitHub Issue with clear acceptance criteria.
