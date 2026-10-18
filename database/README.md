@@ -1,40 +1,36 @@
-# Database
+# FoodSave Smart Database
 
-This directory contains the SQLite database structure and supporting documentation for FoodSave Smart.
+Responsible team member: Alex
 
-## Planned files
-- schema.sql — tables, relationships, constraints and indexes.
-- seed.sql — demonstration data for development and testing.
-- data-dictionary.md — field names, types and descriptions.
-- Entity relationship diagram (ERD).
+This folder contains the MySQL database schema, migrations
+and sample data for FoodSave Smart.
 
-## Planned data
-- Demonstration users and roles.
-- Food categories and batches.
-- Reservations and collection records.
-- Temperature readings and sensor status.
-- Alerts.
+## Planned contents
 
-Device-to-storage-location mapping remains subject to team agreement.
+- Database schema and table creation scripts.
+- Relationships, keys and constraints.
+- Migration scripts for database changes.
+- Sample data for development and testing.
+- Entity relationship diagram.
 
 ## Integration
-Only the Flask backend accesses the database.
 
-The frontend and temperature sender communicate with the backend through the agreed API.
+Agree table names, fields and data types with the backend developer.
 
-Schema changes must be agreed with the backend developer and any other affected team members.
+Support food inventory, preparation and expiry information,
+and timestamped sensor readings.
 
-## Validation
-- Verify that the schema and seed scripts run successfully.
-- Check relationships and data constraints.
-- Reject negative stock and invalid reservation quantities.
-- Verify that saved data remains available after restart.
-- Work with the backend developer to test reservation transactions.
+Clearly distinguish physical sensor readings, simulated data
+and manually entered measurements.
 
-## Repository rules
-Commit SQL scripts and documentation.
+## Collaboration
 
-Do not commit local database files, passwords, device tokens or real personal data.
+Develop changes on the `feature/database` branch.
 
-## Status
-Planned. Implementation has not started.
+Open a Draft Pull Request targeting `main` while work is ongoing.
+Select Ready for review when the scripts are ready to be checked.
+
+Document how to create the database and run the scripts here.
+
+Do not upload database passwords, `.env` files or real personal data.
+Use fictional records for sample data.
