@@ -1,8 +1,9 @@
-
 import math
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from flask_cors import CORS
+
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
@@ -11,6 +12,13 @@ from db import get_db_connection
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 app = Flask(__name__)
+CORS(
+    app,
+    resources={
+        r"/api/health": {"origins": "*"},
+        r"/api/fridge/status": {"origins": "*"}
+    }
+)
 
 DEVICE_TOKEN = os.getenv("DEVICE_TOKEN")
 
