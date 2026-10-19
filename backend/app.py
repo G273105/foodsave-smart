@@ -307,6 +307,56 @@ def receive_temperature():
         "fridge_status": fridge_status
     }), 201
 
+@app.get("/api/products")
+def get_products():
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        cursor.execute(
+            """
+            SELECT
+                batch_id,
+                name,
+                category_id,
+                location_id,
+                allergens_json,
+                original_price_pence,
+                quantity_available,
+                sell_by_at,
+                availability_status
+            FROM batches
+            WHERE availability_status = %s
+              AND quantity_available > 0
+              AND sell_by_at > NOW()
+            ORDER BY sell_by_at ASC, batch_id ASC
+            """,
+            ("AVAILABLE",)
+        )
+
+        products = cursor.fetchall()
+
+        for product in products:
+            if product["sell_by_at"] is not None:
+                product["sell_by_at"] = product["sell_by_at"].isoformat()
+
+        return jsonify({
+            "products": products,
+            "count": len(products)
+        }), 200
+
+    except Exception:
+        app.logger.exception("Failed to retrieve products")
+        return jsonify({"error": "Database unavailable"}), 503
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
