@@ -12,13 +12,48 @@ def mock_mysql(monkeypatch):
     cursor = MagicMock()
 
     connection.cursor.return_value = cursor
-    connection.cursor.return_value.fetchone.return_value = None
-    cursor.fetchone.return_value = {
+
+    # Simulate the initial fridge state stored in MySQL.
+    location = {
         "safety_state": "HOLD",
         "hold_reason": "Awaiting valid simulator temperature"
     }
 
-    # Simulate a successfully updated fridge.
+    # Simulate the latest readings stored in MySQL.
+    readings = {}
+
+    def fake_fetchone():
+        sql = cursor.execute.call_args.args[0].lower()
+
+        if "from storage_locations" in sql:
+            return location.copy()
+
+        if "from temperature_readings" in sql:
+            device_id = cursor.execute.call_args.args[1][0]
+            reading = readings.get(device_id)
+            return reading.copy() if reading else None
+
+        return None
+
+    cursor.fetchone.side_effect = fake_fetchone
+
+    def fake_execute(sql, params=None):
+        normalized_sql = " ".join(sql.lower().split())
+
+        if "update storage_locations" in normalized_sql:
+            location["safety_state"] = params[0]
+            location["hold_reason"] = params[1]
+
+        elif "insert into temperature_readings" in normalized_sql:
+            device_id, temperature, sensor_status = params
+
+            readings[device_id] = {
+                "temperature_c": temperature,
+                "sensor_status": sensor_status,
+                "received_at": "2026-10-19 12:00:00"
+            }
+
+    cursor.execute.side_effect = fake_execute
     cursor.rowcount = 1
 
     monkeypatch.setattr(
@@ -157,12 +192,6 @@ def test_esp32_does_not_change_fridge_status(
 
     assert first_response.status_code == 201
 
-    # The mocked database now reports SAFE.
-    cursor.fetchone.return_value = {
-        "safety_state": "SAFE",
-        "hold_reason": None
-    }
-
     # Secondary ESP32 must not override the primary simulator.
     response = client.post(
         "/api/temperatures",
@@ -178,12 +207,17 @@ def test_esp32_does_not_change_fridge_status(
     assert response.get_json()["fridge_status"] == "SAFE"
 
     status_response = client.get("/api/fridge/status")
-    readings = status_response.get_json()["latest_readings"]
 
     assert status_response.status_code == 200
-    assert status_response.get_json()["status"] == "SAFE"
+
+    data = status_response.get_json()
+    readings = data["latest_readings"]
+
+    assert data["status"] == "SAFE"
     assert "simulator-01" in readings
     assert "esp32-01" in readings
+    assert readings["simulator-01"]["temperature"] == 4.6
+    assert readings["esp32-01"]["temperature"] == 24.5
 
 
 def test_missing_temperature_field(client, auth_headers):
