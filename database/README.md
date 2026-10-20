@@ -37,4 +37,12 @@ Commit SQL scripts and documentation.
 Do not commit local database files, passwords, device tokens or real personal data.
 
 ## Status
-Planned. Implementation has not started.
+## Status
+
+Database files have been uploaded to the `feature/database` branch.
+
+Last updated: 20 October 2026.
+
+Included: `schema.sql`
+
+Validation: Pending.
