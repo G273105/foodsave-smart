@@ -836,10 +836,8 @@ def get_products():
         cursor = connection.cursor(dictionary=True)
 
         # FIX: Avoid the reserved MySQL identifier current_time.
-        cursor.execute("SELECT NOW() AS `current_time`")
-
-        now = cursor.fetchone()["current_time"]
-
+        cursor.execute("SELECT NOW() AS db_now")
+        now = cursor.fetchone()["db_now"]
         cursor.execute(
             """
             SELECT safety_state, hold_reason
