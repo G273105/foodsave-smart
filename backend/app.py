@@ -836,9 +836,7 @@ def get_products():
         cursor = connection.cursor(dictionary=True)
 
         # FIX: Avoid the reserved MySQL identifier current_time.
-        cursor.execute(
-            "SELECT NOW() AS current_time"
-        )
+        cursor.execute("SELECT NOW() AS `current_time`")
 
         now = cursor.fetchone()["current_time"]
 
@@ -1078,9 +1076,7 @@ def create_reservation(claims):
             }), 404
 
         # FIX: Use a non-reserved alias for the database clock.
-        cursor.execute(
-            "SELECT NOW() AS current_time"
-        )
+        cursor.execute("SELECT NOW() AS `current_time`")
 
         now = cursor.fetchone()["current_time"]
 
