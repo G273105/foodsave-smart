@@ -1,0 +1,10 @@
+{
+  "name": "foodsave-smart-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check app.js && node --check api.js && node --check mock.js && node --check model.js && node --check bundle.js",
+    "build": "node scripts/build.mjs"
+  }
+}
