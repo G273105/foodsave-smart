@@ -19,7 +19,17 @@ export function normalizeProduct(raw,profile='pence') {
   const status=String(raw.status??raw.availability_status??'unavailable').toLowerCase();
   return {...raw,original_price_pence:original,discounted_price_pence:current,category:typeof raw.category==='string'?raw.category:'Other',status,allergens:Array.isArray(allergens)?allergens.filter(a=>typeof a==='string'):[],allergens_supplied:allergensSupplied,sell_by_at:raw.sell_by_at??null};
 }
-export function canReserve(product){return product.status==='available'&&product.quantity_available>0;}
+export function canReserve(product){return product.status==='available'&&product.quantity_available>0&&product.can_reserve!==false;}
+export function expiryText(value,now=Date.now()){
+ if(typeof value!=='string'||!value)return 'Expiry not supplied';
+ if(!/(Z|[+-]\d{2}:?\d{2})$/i.test(value))return 'Sell-by: '+value.replace('T',' ')+' (timezone awaiting confirmation)';
+ const remaining=Date.parse(value)-now;
+ if(!Number.isFinite(remaining))return 'Expiry unavailable';
+ if(remaining<=0)return 'Sell-by time reached · checking availability';
+ const minutes=Math.ceil(remaining/60000),days=Math.floor(minutes/1440),hours=Math.floor(minutes%1440/60);
+ return (days?days+'d ':'')+(hours?hours+'h ':'')+(minutes%60)+'m remaining';
+}
+
 export function createProductPayload(form,profile='pence') {
   const name=String(form.name??'').trim();if(!name||name.length>150)throw new AppError('Enter a product name of up to 150 characters.','VALIDATION');
   positiveId(form.category_id,'Category');quantity(form.quantity_available);
@@ -30,4 +40,4 @@ export function createProductPayload(form,profile='pence') {
   return {...common,original_price_pence:form.original_price_pence,quantity_available:form.quantity_available,allergens_json:form.allergens};
 }
 export function priceInputToPence(text){if(!/^\d+(\.\d{1,2})?$/.test(String(text)))throw new AppError('Enter a price such as 5.50.','VALIDATION');const result=Math.round(Number(text)*100);if(!Number.isSafeInteger(result))throw new AppError('Price is too large.','VALIDATION');return result;}
-export function formatDate(value){if(!value)return 'Not supplied';const date=new Date(value);return Number.isNaN(date.getTime())?'Not supplied':new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/London'}).format(date)+' (UK)';}
+export function formatDate(value){if(typeof value==='string'&&!/(Z|[+-]\d{2}:?\d{2})$/i.test(value))return value.replace('T',' ')+' (timezone unconfirmed)';if(!value)return 'Not supplied';const date=new Date(value);return Number.isNaN(date.getTime())?'Not supplied':new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/London'}).format(date)+' (UK)';}

@@ -1,77 +1,73 @@
-# FoodSave Smart — Florin Tompi's front-end handover
+# FoodSave Smart — Florin frontend API update
 
-Prepared 18 October 2026 for CPU4106. HTML, CSS and vanilla JavaScript, with no build step or third-party runtime dependencies.
+Updated 21 October 2026 against the supplied backend/API_CONTRACT.md.
+The existing design, photos and offline sample inventory are retained.
 
-## What is ready
+## Open the website
 
-- Responsive food catalogue with local photographs, dynamic category filtering, search and sorting.
-- Product details, source-provided prices, allergens, sell-by information and quantity selection.
-- Student reservations, active/collected/cancelled filters and cancellation confirmation.
-- Staff workspace: batch creation, collection by reservation reference, stock overview and collection-only reports.
-- Fridge and alert panels with honest unavailable, empty, loading and error states.
-- Separate API and independent-review data services. API failures never switch silently to sample data.
-- Configurable pence and GBP API profiles to accommodate the conflicting supplied documents.
-- Request timeouts, no automatic mutation retries, duplicate-submit guards and server-status validation.
-- Keyboard-operable native controls and dialogs, visible focus, skip link, live messages and responsive styles.
-- Automated service checks and application event/state flows, including the delivered browser bundle, in a lightweight DOM harness.
+For API integration, serve this folder at http://127.0.0.1:3000 and open
+http://127.0.0.1:3000/index.html.
 
-This is an implemented front-end, not a claim of completed team integration. The published review runs independently until a working backend is provided. Live authentication, shared persistence and fridge readings have not been verified.
+Windows with Python installed: double-click START_LOCAL.bat, keep its window open,
+and open the address it prints. Alternatively run:
 
-## Run locally
-
-1. Right-click the ZIP and choose **Extract All**. Keep all folders together.
-2. Open the extracted folder and double-click **index.html** at the top level.
-3. The food selection, local photos, filters, reservations and staff review tools work directly from your device. No terminal or installation is required for independent review.
-
-The committed `bundle.js` includes the same application code and embedded review product data, so local file access does not need ES module imports or JSON fetches. Source modules remain separate for maintenance. After editing a source module or product JSON, run `npm run build` and include the rebuilt bundle.
-
-For backend integration or HTTP testing, optionally run `python -m http.server 8080` and visit http://localhost:8080. Live backend access still requires the team's API and appropriate server permissions.
-
-No npm install is needed. To run the independent tests, use Node.js 20+ (Node.js 24 was used here):
-
-```sh
-npm test
-npm run check
+```
+python -m http.server 3000 --bind 127.0.0.1
 ```
 
-## Project files
+The default API URL is https://foodsave-smart.onrender.com/api in config.js.
+Change it to http://127.0.0.1:5000/api to work with a local Flask backend.
+A service outage displays an error; it never silently substitutes sample stock.
 
-| File | Purpose |
-|---|---|
-| `index.html`, `style.css` | Page structure and shared visual system |
-| `app.js` | Interface events, validation and rendering |
-| `model.js` | Money representation, product normalization and input validation |
-| `api.js` | Flask HTTP adapter; no business-rule price calculation |
-| `mock.js` | Isolated local review service; never used in API mode |
-| `config.js` | Explicit deployment configuration |
-| `mocks/products.json` | Product-list reference values for independent review only |
-| `assets/` | Local illustrative food photographs and placeholder |
-| `tests/` | Service, contract and UI event/state checks |
-| `docs/HANDOVER.md` | Exact connection steps and unresolved team decisions |
-| `docs/TEST_RESULTS.md` | Confirmed checks and verification limits |
-| `docs/MANUAL_REVIEW.md` | Browser, keyboard and live-integration checklist |
-| `inventory.html` | Unchanged earlier inventory prototype, preserved for reference; not the final staff/API flow |
+To inspect the existing offline experience without a server, double-click
+OFFLINE_REVIEW.html. It is explicitly labelled sample data and makes no real bookings.
+The root index.html opens API mode; double-clicking it cannot bypass browser CORS.
 
-Copy the contents of this package into the team frontend folder. Include the tests and docs in the PR. Do not copy any Sites hosting identity into the team's repository.
+## Implemented for Florin
 
-## Review data and honesty
+- GET /api/products and details from that same documented catalogue route.
+- Original price, reduced price and discount percentage supplied by Flask.
+- Integer pence converted only for GBP display; no frontend discount calculation.
+- can_reserve and reservation_message used for disabled buttons and messages.
+- Stock/expired/blocked display if supplied; HOLD prevents reservations.
+- Registration, login, in-memory JWT and Bearer-authenticated reservation POST.
+- Reservation body contains batch_id and quantity; no user ID chosen by frontend.
+- PENDING confirmation, stock refresh, loading/empty/error states and conflict handling.
+- Fridge SAFE/HOLD and alerts derived from fridge status.
+- Only this signed-in session's successful reservation responses are shown.
+- Logout clears token/account/session reservation list; refresh also clears them.
+- No automatic retry of a failed write. Uncertain outcomes tell users to check with staff.
 
-The top banner identifies independent-review mode. Reservations, staff actions and quantities in that mode are stored on the reviewer's device, not in the team's database. No payment is taken. Product photographs are illustrative.
+## Outstanding integration dependencies
 
-All ten original/reduced prices come from `FoodSaveSmart_Product_List_LARGE_PRINT_2_PAGES.docx`. The first four names, original prices, stock quantities, batch IDs, dates and allergens also follow `updated.sql`. The other six are document demonstration additions; their IDs, categories, stock, portions and reductions are not verified production records. They are never sent as automatic database seed data.
+1. Backend CORS: allow the agreed website origin on authentication AND reservation
+   endpoints, including OPTIONS, Content-Type and Authorization. Current source
+   allows auth only on localhost ports 3000/5173 and has no reservation CORS rule.
+2. Expiry timezone: current sell_by_at omits an offset. The UI shows the supplied
+   timestamp with a timezone notice. Countdown updates every 30 seconds when API
+   timestamps include Z or an explicit offset. No timezone is guessed.
+3. The catalogue excludes expired/out-of-stock batches. The UI can show their states
+   when returned, but cannot invent missing products. Agree endpoint coverage.
+4. Reservation history, cancellation, staff stock creation, collection and reports
+   have no documented endpoints. API mode does not call invented routes. The staff
+   workspace is available in offline review only. The alert panel uses fridge HOLD;
+   it is not a full independent alerts feed.
+5. Backend database compatibility and end-to-end reservation testing remain unverified.
 
-The three historical sell-by dates stay unchanged and cannot be reserved in the local review. The mock service may block a product when its sample date passes; this is isolated test behaviour, not the live source of truth. The API profile renders server status and prices. Only the backend may authorize reservations and calculate discounts.
+No shared database accounts or bookings were created during this update.
+Coordinate with the team before testing real registration/reservation writes.
 
-## Asset provenance
+## GitHub handover
 
-Illustrative photographs are local downloads from Unsplash. See `docs/ASSETS.md` for source URLs. They are not photographs of confirmed campus stock. Replace them with staff-provided photos of actual products when available.
+Upload these files to your existing frontend folder on feature/frontend, preserving
+its structure. Do not replace backend files or commit private .env credentials.
+Source files live in dist; bundle.js is generated. After editing run:
 
-## Upload to the team GitHub repository
+```
+npm run build
+npm run check
+npm test
+```
 
-Ask the repository owner for write access if GitHub disables uploads. Extract the ZIP first. Upload the extracted files, not just the ZIP. Agree on a `frontend/` folder with the team; preserve their backend and existing files. Include the root HTML, CSS, JavaScript and assets, `scripts/`, `package.json`, tests and documentation.
-
-For an independent frontend-only repository, upload all contents of this package to its root. The optional `.github/workflows/pages.yml` deploys the staged root website through GitHub Pages only when manually run, after Pages is enabled with GitHub Actions as its source. For the shared team repository, have the maintainer adapt paths to the agreed frontend directory before adding the workflow. GitHub Pages serves only the frontend; it does not run Flask or the database.
-
-## Direct root entry point
-
-The root index.html contains the complete application page. No redirect or dist directory is required. Open index.html locally or serve this directory; the root URL opens the application directly. If placed under frontend/ in the shared repository, configure hosting to publish frontend/ as its document root. The Pages workflow stages website files only in .pages-site; tests and documentation are excluded.
+No npm install is required for the included Node tests/build.
+See docs/TEST_RESULTS.md and docs/HANDOVER.md for evidence and remaining checks.
