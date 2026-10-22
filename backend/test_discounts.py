@@ -107,7 +107,7 @@ def mock_products_database(monkeypatch):
 
         if "select now()" in normalized:
             cursor.fetchone.return_value = {
-                "current_time": now
+                "db_now": now
             }
 
         elif "from storage_locations" in normalized:
@@ -221,7 +221,7 @@ def test_products_fridge_not_found(
     connection.cursor.return_value = cursor
 
     cursor.fetchone.side_effect = [
-        {"current_time": datetime(2026, 10, 20)},
+        {"db_now": datetime(2026, 10, 20)},
         None
     ]
 
