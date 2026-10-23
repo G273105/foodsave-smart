@@ -24,23 +24,29 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 
 app = Flask(__name__)
 
-# Public API endpoints and local frontend development.
+
+# Public API endpoints and authorised frontend origins.
 CORS(
     app,
     resources={
         r"/api/health": {"origins": "*"},
         r"/api/fridge/status": {"origins": "*"},
         r"/api/products": {"origins": "*"},
-        r"/api/auth/*": {
+        r"/api/auth/.*": {
             "origins": [
                 "http://localhost:3000",
                 "http://127.0.0.1:3000",
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
-            ]
+                "https://food-save-smart.co.uk",
+                "https://www.food-save-smart.co.uk",
+            ],
+            "methods": ["GET", "POST", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
         },
     },
 )
+
 
 DEVICE_TOKEN = os.getenv("DEVICE_TOKEN")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")

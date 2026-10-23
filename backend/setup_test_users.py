@@ -3,20 +3,22 @@ from getpass import getpass
 from werkzeug.security import generate_password_hash
 from db import get_db_connection
 
+
 users = [
-    (1, "user1@example.com", "Alex Student", "STUDENT"),
-    (2, "user2@example.com", "Maria Staff", "STAFF"),
-    (3, "laurentiu@example.com", "Laurentiu", "STAFF"),
-    (4, "florin@example.com", "Florin", "STAFF"),
-    (5, "costel@example.com", "Costel", "STUDENT"),
-    (6, "marius@example.com", "Marius", "STUDENT"),
+    (1, "alex@example.com", "Alex Student", "STUDENT"),
+    (2, "maria@example.com", "Maria Staff", "STAFF"),
+    (3, "laurentiu@example.com", "Laurentiu Admin", "ADMIN"),
+    (4, "florin@example.com", "Florin Student", "STUDENT"),
+    (5, "costel@example.com", "Costel Student", "STUDENT"),
+    (6, "marius@example.com", "Marius Staff", "STAFF"),
 ]
+
 
 connection = get_db_connection()
 cursor = connection.cursor()
 
 try:
-    for user_id, email, name, role in users:
+    for user_id, email, name, role in users:                                                                                                   
         password = getpass(f"Password for {name}: ")
 
         if len(password) < 12:
