@@ -1189,6 +1189,63 @@ def create_reservation(claims):
 
 
 # ------------------------------------------------------------
+# RESERVATION HISTORY
+# ------------------------------------------------------------
+
+@app.get("/api/reservations")
+@login_required
+def get_reservations(claims):
+    """Return reservations belonging to the signed-in user."""
+
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        cursor.execute(
+            """
+            SELECT
+                r.reservation_id,
+                r.batch_id,
+                r.user_id,
+                r.quantity,
+                r.status,
+                b.name,
+                b.original_price_pence
+            FROM reservations AS r
+            INNER JOIN batches AS b
+                ON r.batch_id = b.batch_id
+            WHERE r.user_id = %s
+            ORDER BY r.reservation_id DESC
+            """,
+            (claims["user_id"],)
+        )
+
+        reservations = cursor.fetchall()
+
+        return jsonify({
+            "count": len(reservations),
+            "reservations": reservations
+        }), 200
+
+    except Exception:
+        app.logger.exception("Failed to retrieve reservations")
+
+        return jsonify({
+            "error": "Database unavailable"
+        }), 503
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+
+        if connection is not None:
+            connection.close()
+
+
+# ------------------------------------------------------------
 # LOCAL DEVELOPMENT
 # ------------------------------------------------------------
 
