@@ -29,15 +29,14 @@ app = Flask(__name__)
 CORS(
     app,
     resources={
-        r"/api/health": {"origins": "*"},
-        r"/api/fridge/status": {"origins": "*"},
-        r"/api/products": {"origins": "*"},
         r"/api/auth/.*": {
             "origins": [
                 "http://localhost:3000",
                 "http://127.0.0.1:3000",
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
+                "http://localhost:5500",
+                "http://127.0.0.1:5500",
                 "https://food-save-smart.co.uk",
                 "https://www.food-save-smart.co.uk",
             ],
