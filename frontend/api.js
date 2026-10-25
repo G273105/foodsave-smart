@@ -121,9 +121,27 @@ export function createApi(config, fetcher = globalThis.fetch) {
             confirmed.push({...value, price_pence: value.unit_price_pence});
             return value;
         },
-        async cancel() {
-            unsupported('Cancellation is not available through the current API. Please contact collection staff.');
-        },
+        async cancel(reservation_id) {
+    positiveId(reservation_id);
+
+    const data = await request(`/reservations/${reservation_id}`, {
+        method: 'DELETE',
+        protectedRequest: true
+    });
+
+    if (data.status !== 'CANCELLED') {
+        throw new AppError(
+            'Cancellation was not confirmed. Refresh your reservation history.',
+            'CONTRACT'
+        );
+    }
+
+    confirmed = confirmed.filter(
+        reservation => reservation.reservation_id !== reservation_id
+    );
+
+    return data;
+},
         async collect() {
             unsupported('The current API does not provide a collection endpoint.');
         },

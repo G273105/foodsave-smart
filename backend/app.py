@@ -1254,6 +1254,117 @@ def get_reservations(claims):
 
 
 # ------------------------------------------------------------
+# CANCEL RESERVATION
+# ------------------------------------------------------------
+
+@app.delete("/api/reservations/<int:reservation_id>")
+@login_required
+def cancel_reservation(claims, reservation_id):
+    """Cancel a pending reservation and restore its stock."""
+
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        # Lock the reservation before changing its status.
+        cursor.execute(
+            """
+            SELECT reservation_id, batch_id, quantity, status
+            FROM reservations
+            WHERE reservation_id = %s
+              AND user_id = %s
+            FOR UPDATE
+            """,
+            (reservation_id, claims["user_id"]),
+        )
+
+        reservation = cursor.fetchone()
+
+        if reservation is None:
+            connection.rollback()
+            return jsonify({
+                "error": "Reservation not found"
+            }), 404
+
+        if reservation["status"] != "PENDING":
+            connection.rollback()
+            return jsonify({
+                "error": "Only pending reservations can be cancelled"
+            }), 409
+
+        # Lock the associated product and restore its quantity.
+        cursor.execute(
+            """
+            SELECT batch_id
+            FROM batches
+            WHERE batch_id = %s
+            FOR UPDATE
+            """,
+            (reservation["batch_id"],),
+        )
+
+        if cursor.fetchone() is None:
+            connection.rollback()
+            return jsonify({
+                "error": "Associated product not found"
+            }), 409
+
+        cursor.execute(
+            """
+            UPDATE reservations
+            SET status = 'CANCELLED'
+            WHERE reservation_id = %s
+              AND status = 'PENDING'
+            """,
+            (reservation_id,),
+        )
+
+        if cursor.rowcount != 1:
+            raise RuntimeError("Reservation status update failed")
+
+        cursor.execute(
+            """
+            UPDATE batches
+            SET quantity_available = quantity_available + %s
+            WHERE batch_id = %s
+            """,
+            (reservation["quantity"], reservation["batch_id"]),
+        )
+
+        if cursor.rowcount != 1:
+            raise RuntimeError("Stock restoration failed")
+
+        connection.commit()
+
+        return jsonify({
+            "message": "Reservation cancelled successfully",
+            "reservation_id": reservation_id,
+            "status": "CANCELLED",
+            "quantity_restored": reservation["quantity"]
+        }), 200
+
+    except Exception:
+        if connection is not None:
+            connection.rollback()
+
+        app.logger.exception("Failed to cancel reservation")
+
+        return jsonify({
+            "error": "Unable to cancel reservation"
+        }), 503
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+
+        if connection is not None:
+            connection.close()
+
+
+# ------------------------------------------------------------
 # LOCAL DEVELOPMENT
 # ------------------------------------------------------------
 

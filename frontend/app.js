@@ -272,7 +272,7 @@ function renderReservations() {
     $('reservation-count').textContent = reservations.filter(r => ['reserved', 'pending'].includes(String(r.status).toLowerCase())).length;
     if (!filtered.length) {
         const box = node('div', undefined, 'empty');
-        box.append(node('h2', reservations.length ? 'No reservations in this view.' : 'Your next good find is waiting.'), node('p', !mock ? 'Your reservation history is retrieved securely from the FoodSave Smart service. Contact campus staff if you need to cancel a reservation.' : 'Browse the selection and reserve food you would like to collect.'), button('Browse food', () => switchView('browse'), 'primary'));
+        box.append(node('h2', reservations.length ? 'No reservations in this view.' : 'Your next good find is waiting.'), node('p', !mock ? 'Your reservation history is retrieved securely from the FoodSave Smart service.' : 'Browse the selection and reserve food you would like to collect.'), button('Browse food', () => switchView('browse'), 'primary'));
         $('reservation-list').append(box);
         return;
     }
@@ -284,14 +284,22 @@ function renderReservations() {
         if (Number.isInteger(r.price_pence)) info.append(node('p', money(r.price_pence) + ' per item at reservation'));
         if (r.created_at) info.append(node('p', 'Reserved ' + formatDate(r.created_at), 'muted'));
         if (['reserved', 'pending'].includes(status)) {
-            info.append(node('p', 'Confirm collection location and opening times with campus staff.'));
-            const cancel = button('Cancel reservation', () => confirm('Cancel this reservation?', `Release reservation ${r.reservation_id} for ${r.name || p?.name || 'this product'}?`, () => cancelReservation(r.reservation_id)));
-            cancel.setAttribute('aria-label', 'Cancel reservation ' + r.reservation_id);
-            if (mock) box.append(info, cancel); else {
-                info.append(node('p', 'Contact collection staff for cancellation.', 'muted'));
-                box.append(info);
-            }
-        } else box.append(info);
+    info.append(node('p', 'Confirm collection location and opening times with campus staff.'));
+
+    const cancel = button(
+        'Cancel reservation',
+        () => confirm(
+            'Cancel this reservation?',
+            `Release reservation ${r.reservation_id} for ${r.name || p?.name || 'this product'}?`,
+            () => cancelReservation(r.reservation_id)
+        )
+    );
+
+    cancel.setAttribute('aria-label', 'Cancel reservation ' + r.reservation_id);
+    box.append(info, cancel);
+} else {
+    box.append(info);
+}
         $('reservation-list').append(box);
     }
 }
@@ -716,22 +724,23 @@ async function init() {
         fillCategories();
         bind();
         bindAuth();
-        if (!mock) {
-            $('reservation-scope').hidden = false;
-$('reservation-scope').textContent = 'Your reservation history is retrieved securely from the FoodSave Smart service. Contact campus staff if you need to cancel a reservation.';        setInterval(() => {
-            document.querySelectorAll('[data-expiry]').forEach(n => n.textContent = expiryText(n.dataset.expiry));
-        }, 30000);
-        if (!mock) {
+if (!mock) {
     $('reservation-scope').hidden = false;
     $('reservation-scope').textContent =
-        'Your reservation history is retrieved securely from the FoodSave Smart service. Contact campus staff if you need to cancel a reservation.';
-}
+        'Your reservation history is retrieved securely from the FoodSave Smart service. You can cancel pending reservations below.';
 
-            setInterval(() => {
-                if (activeView === 'status') loadFridge().catch(() => {
-                });
-            }, 30000);
+    setInterval(() => {
+        document.querySelectorAll('[data-expiry]').forEach(n => {
+            n.textContent = expiryText(n.dataset.expiry);
+        });
+    }, 30000);
+
+    setInterval(() => {
+        if (activeView === 'status') {
+            loadFridge().catch(() => {});
         }
+    }, 30000);
+}
         await Promise.allSettled([loadProducts(), loadReservations()]);
         await switchView(location.hash.slice(1) || 'browse', false);
     } catch (error) {
