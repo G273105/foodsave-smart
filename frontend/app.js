@@ -16,10 +16,10 @@ const photos = {
     'apples': 'apples',
     'sandwich (single)': 'sandwich',
     'sandwich': 'sandwich',
-    'bread pack': 'bread',
+    'bread pack': 'bread-pack',
     'yoghurt pack': 'yoghurt',
-    'sandwich pack (2 sandwiches)': 'sandwich',
-    'sandwich pack': 'sandwich',
+    'sandwich pack (2 sandwiches)': 'sandwich-pack',
+    'sandwich pack': 'sandwich-pack',
     'mixed vegetables': 'vegetables'
 };
 
@@ -64,16 +64,49 @@ function showMode() {
 
 function productImage(p) {
     const img = node('img');
-    const known = photos[p.name.toLowerCase()];
-    img.src = known ? `assets/${known}.jpg` : 'assets/placeholder.svg';
-    img.alt = known ? p.name + ' — illustrative photograph' : 'Photograph not supplied for ' + p.name;
+
+    const name = String(p.name || '').toLowerCase().trim();
+
+    let known = photos[name];
+
+    // Different illustrative photographs for separate apple batches.
+    if (name === 'apples') {
+        const appleBatches = products
+            .filter(item => String(item.name || '').toLowerCase().trim() === 'apples')
+            .sort((a, b) => a.batch_id - b.batch_id);
+
+        const index = appleBatches.findIndex(
+            item => item.batch_id === p.batch_id
+        );
+
+        const applePhotos = [
+            'apples',
+            'green-apples',
+            'mixed-apples'
+        ];
+
+        known = applePhotos[
+            index >= 0 ? index % applePhotos.length : 0
+        ];
+    }
+
+    img.src = known
+        ? `assets/${known}.jpg`
+        : 'assets/placeholder.svg';
+
+    img.alt = known
+        ? p.name + ' — illustrative photograph'
+        : 'Photograph not supplied for ' + p.name;
+
     img.loading = 'lazy';
     img.width = 900;
     img.height = 620;
+
     img.onerror = () => {
         img.onerror = null;
         img.src = 'assets/placeholder.svg';
     };
+
     return img;
 }
 
