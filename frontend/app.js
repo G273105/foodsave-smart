@@ -328,7 +328,15 @@ function renderReservations() {
 }
 
 async function loadReservations() {
+    if (!mock && !service.user) {
+        reservations = [];
+        renderReservations();
+        feedback('reservations-feedback', '');
+        return;
+    }
+
     feedback('reservations-feedback', 'Loading reservations…');
+
     try {
         reservations = await service.reservations();
         renderReservations();
