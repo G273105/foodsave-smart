@@ -1,232 +1,84 @@
+# Database — FoodSave Smart
 
-# Database
+This directory contains the MySQL database structure and supporting
+documentation for **FoodSave Smart**, the Fly-Tech internship project
+addressing **UN SDG 12.3** (halving food waste) and **SDG 2.1** (affordable
+food access for students).
 
-This directory contains the MySQL database structure and supporting documentation for FoodSave Smart.
+The backend is a **Flask (Python) API**; the database is **MySQL 8.0.16+**.
+Two temperature sources write to the database: a **Python simulator**
+(`simulator-01`, `SIMULATED`) and a physical **ESP32** sensor
+(`esp32-01`, `PHYSICAL`).
 
-## Database Technology
+---
 
-Database management system: MySQL
+## Contents
 
-The database is designed to support food surplus management, temperature monitoring, reservations, stock control and alerts.
+| File | Purpose |
+|---|---|
+| `schema.sql` | Full DDL: 8 tables, FKs, CHECK constraints, indexes, base seed |
+| `seed_products.sql` | Extended product seed (bakery, ready meals, fruit & veg) |
+| `seed_users.sql` | Team + demo users (2 staff, 2 students) |
+| `views.sql` | `latest_temperature_readings` view (last 10 per device) |
+| `migrations/` | Ordered schema changes (`001_init`, `002_seed`, `003_users_reservations_constraints`) |
+| `data-dictionary.md` | Field names, types, constraints, and descriptions |
+| `../docs/erd.md` | Entity relationship diagram (Mermaid + Graphviz + DBML) |
+| `../docs/case/` | DFDs and Use Case diagram for the viva |
 
-Alex is responsible for implementing the database structure and providing the SQL setup file.
+---
 
-## Planned Files
+## Schema at a glance
 
-- database.sql — a single SQL file containing table definitions, primary keys, foreign keys, relationships, constraints and demonstration data.
-- data-dictionary.md — field names, data types and descriptions.
-- Entity Relationship Diagram (ERD) — visual representation of the database structure and relationships.
+Eight tables:
 
-The database will be created using the database.sql file.
+| Table | Purpose |
+|---|---|
+| `storage_locations` | Fridges / storage units, with safety state and hold reason |
+| `devices` | Temperature sensors attached to a location (`SIMULATED` / `PHYSICAL`) |
+| `temperature_readings` | Time-series temperature data; `NULL` temp on sensor error |
+| `categories` | Product categories (Ready meal, Bakery, Fruit & Veg) |
+| `batches` | Inventory: price, quantity, allergens, sell-by date, availability |
+| `users` | Students, staff, admins — with `email` (UNIQUE) and `password_hash` |
+| `reservations` | Product holds with post-discount pricing and expiry |
+| `alerts` | Safety/expiry alerts, linked to a location or a batch |
 
-## Database Tables
+**Constraints enforced at DB level:**
 
-The agreed database design includes eight tables:
+- `batches.original_price_pence >= 0`, `batches.quantity_available >= 0`
+- `reservations.quantity >= 1`
+- `reservations.unit_price_pence >= 0`, `total_price_pence >= 0`
+- `reservations.discount_percent BETWEEN 0 AND 100`
+- `users.email` UNIQUE and NOT NULL; `users.password_hash` NOT NULL
 
-### 1. storage_locations
+**Indexes worth knowing:**
 
-Stores information about monitored storage locations.
+- `temperature_readings (device_id, received_at DESC, reading_id DESC)` — latest reading per device, no filesort
+- `reservations (expires_at)` — expired-reservation queries
+- `batches (sell_by_at)` — "expiring soon" queries
 
-Columns:
-- location_id
-- name
-- location_type
-- is_active
-- safety_state
-- hold_reason
-- updated_at
+Full ERD: [`docs/erd.md`](../docs/erd.md).
 
-Initial demonstration data:
-- Fridge 1, location_id = 1
+---
 
-### 2. devices
+## Planned / demonstration data
 
-Stores registered monitoring devices and their associated storage locations.
+- **Users:** 2 students (Alex, Costel), 2 staff (Laurentiu, Florin), 1 admin (Marius)
+- **Categories:** Ready meal, Bakery, Fruit & Veg
+- **Devices:** `simulator-01` (SIMULATED, primary), `esp32-01` (PHYSICAL), both on Fridge 1
+- **Batches:** 10 demo products across all three categories, with varied prices and expiry
+- **Reservations:** created by the Flask backend during demo; seed script leaves the table empty
+- **Temperature readings:** produced by the simulator at ~30s intervals
+- **Alerts:** raised by the Flask backend when temperature thresholds are crossed
 
-Columns:
-- device_id
-- location_id
-- source
-- is_active
-- is_primary
+⚠️ **Placeholder password hashes.** Seeded users have
+`password_hash = 'CHANGE_ME'`. This is **not a valid bcrypt hash** — any
+login attempt will fail until real hashes are generated. Generate one with:
 
-Initial demonstration devices:
-- simulator-01 — SIMULATED
-- esp32-01 — PHYSICAL
+```bash
+python -c "import bcrypt; print(bcrypt.hashpw(b'changeme', bcrypt.gensalt()).decode())"
 
-Both devices are associated with Fridge 1.
+Last updated: 20 October 2026.
 
-Initially, simulator-01 is the primary monitoring device.
+Included: `schema.sql`
 
-### 3. temperature_readings
-
-Stores temperature readings received by the Flask backend.
-
-Columns:
-- reading_id
-- device_id
-- temperature_c
-- sensor_status
-- received_at
-
-Temperature readings are associated with registered devices.
-
-When sensor_status is "error", temperature_c must be NULL.
-
-### 4. categories
-
-Stores food product categories.
-
-Columns:
-- category_id
-- name
-
-Example categories:
-- Ready meal
-- Bakery
-
-### 5. batches
-
-Stores available food batches and their stock information.
-
-Columns:
-- batch_id
-- name
-- category_id
-- location_id
-- allergens_json
-- original_price_pence
-- quantity_available
-- sell_by_at
-- created_at
-- availability_status
-
-Demonstration batches will include different prices, quantities and sell-by dates.
-
-### 6. users
-
-Stores application users and their roles.
-
-Columns:
-- user_id
-- display_name
-- role
-
-Initial demonstration users will include:
-- At least one student
-- At least one staff member
-
-### 7. reservations
-
-Stores food reservations created by users.
-
-Columns:
-- reservation_id
-- batch_id
-- user_id
-- quantity
-- status
-- created_at
-- updated_at
-
-The reservations table may initially be empty.
-
-Reservations and stock validation will be managed through the Python Flask backend.
-
-### 8. alerts
-
-Stores application alerts associated with storage locations or food batches.
-
-Columns:
-- alert_id
-- location_id
-- batch_id
-- alert_type
-- message
-- status
-- created_at
-- resolved_at
-
-The alerts table may initially be empty.
-
-Alerts will be managed through the Python Flask backend.
-
-## Database Relationships
-
-The planned relationships include:
-
-- devices.location_id references storage_locations.location_id
-- temperature_readings.device_id references devices.device_id
-- batches.category_id references categories.category_id
-- batches.location_id references storage_locations.location_id
-- reservations.batch_id references batches.batch_id
-- reservations.user_id references users.user_id
-- alerts.location_id references storage_locations.location_id
-- alerts.batch_id references batches.batch_id
-
-Primary keys, foreign keys and constraints will be defined in database.sql.
-
-The final SQL structure and data types must be confirmed with the backend developer before integration.
-
-## Integration
-
-Only the Python Flask backend communicates directly with MySQL.
-
-The frontend, simulator and ESP32 communicate with Flask through the agreed API endpoints.
-
-Temperature endpoint:
-POST /api/temperatures
-
-Fridge status endpoint:
-GET /api/fridge/status
-
-Health endpoint:
-GET /api/health
-
-The backend will:
-- Validate incoming temperature readings.
-- Store accepted readings in temperature_readings.
-- Identify the primary monitoring device.
-- Retrieve and update refrigerator status.
-- Retrieve food batches and stock information.
-- Calculate discounts.
-- Manage reservations and stock availability.
-- Record and retrieve alerts.
-
-The frontend and monitoring devices must not connect directly to MySQL.
-
-## Database Validation
-
-The database implementation must be tested to:
-
-- Confirm that database.sql executes successfully.
-- Verify all eight tables.
-- Verify primary and foreign keys.
-- Check relationships and data constraints.
-- Reject invalid stock quantities.
-- Prevent reservations exceeding available stock.
-- Verify that temperature readings are stored correctly.
-- Support NULL temperatures for sensor errors.
-- Confirm that saved data persists after application restart.
-- Verify reservation transactions and stock consistency.
-
-Database validation will be coordinated with the Flask backend developer.
-
-## Repository Rules
-
-- Commit database.sql and supporting documentation.
-- Use demonstration data without real personal information.
-- Do not commit database credentials, passwords or device tokens.
-- Keep database connection credentials in local environment variables.
-- Coordinate schema changes with affected team members.
-- Keep the agreed table and column names consistent with the Flask backend.
-
-## Current Status
-
-The MySQL database structure and eight required tables have been specified for implementation.
-
-The database setup file, database.sql, is being prepared by the database developer.
-
-The Python Flask backend includes a MySQL connector configuration, but persistent database integration is not yet complete.
-
-The final database implementation will be reviewed and tested before integration with the backend.
+Validation: Pending.
