@@ -15,9 +15,11 @@ const photos = {
     'sourdough loaf': 'bread',
     'apples': 'apples',
     'sandwich (single)': 'sandwich',
+    'sandwich': 'sandwich',
     'bread pack': 'bread',
     'yoghurt pack': 'yoghurt',
     'sandwich pack (2 sandwiches)': 'sandwich',
+    'sandwich pack': 'sandwich',
     'mixed vegetables': 'vegetables'
 };
 
