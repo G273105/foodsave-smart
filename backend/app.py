@@ -616,18 +616,48 @@ def get_fridge_status():
 
 @app.post("/api/temperatures")
 def receive_temperature():
-    global fridge_status
-
-    authorization = request.headers.get(
-        "Authorization", ""
-    )
-
+    authorization = request.headers.get("Authorization", "")
     if authorization != f"Bearer {DEVICE_TOKEN}":
-        return jsonify({
-            "error": "Unauthorized device"
-        }), 401
+        return jsonify({"error": "Unauthorized device"}), 401
+    return save_temperature_reading(request.get_json(silent=True))
 
+
+@app.post("/api/simulator/temperature")
+@login_required
+def set_simulator_temperature(claims):
     data = request.get_json(silent=True)
+    if not isinstance(data, dict) or type(data.get("temperature")) not in (int, float) or data["temperature"] not in (4.5, 24.5):
+        return jsonify({"error": "Choose 4.5 or 24.5 degrees"}), 400
+
+    connection = None
+    cursor = None
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT role FROM users WHERE user_id = %s LIMIT 1", (claims["user_id"],))
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "User not found"}), 401
+        if user["role"] not in ("STAFF", "ADMIN"):
+            return jsonify({"error": "Staff or admin access required"}), 403
+    except Exception:
+        app.logger.exception("Failed to authorise simulator control")
+        return jsonify({"error": "Database unavailable"}), 503
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if connection is not None:
+            connection.close()
+
+    return save_temperature_reading({
+        "id": "simulator-01",
+        "temperature": data["temperature"],
+        "sensor_status": "ok",
+    })
+
+
+def save_temperature_reading(data):
+    global fridge_status
 
     if not isinstance(data, dict):
         return jsonify({

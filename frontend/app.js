@@ -645,6 +645,7 @@ function bind() {
     $('reservation-filter').onchange = renderReservations;
     $('refresh-reservations').onclick = safe(loadReservations);
     $('refresh-status').onclick = () => Promise.allSettled([loadFridge(), loadAlerts()]);
+        bindSimulator();
     $('refresh-staff').onclick = async () => {
         await Promise.allSettled([loadProducts(), loadReports(), loadReservations()]);
         $('save-batch').disabled = false;
@@ -675,10 +676,72 @@ function renderAccount() {
     const user = service.user;
     $('account-button').textContent = user ? 'Sign out — ' + user.display_name : 'Sign in';
     $('auth-note').textContent = user ? 'Signed in as ' + user.display_name : 'Sign in to reserve food.';
+        updateSimulatorControls();
 }
 
 function openAuth() {
     if (!$('auth-dialog').open) $('auth-dialog').showModal();
+}
+function updateSimulatorControls() {
+    const user = service.user;
+    const authorised = !mock && ['ADMIN', 'STAFF'].includes(user?.role);
+
+    $('sim-45').disabled = !authorised;
+    $('sim-245').disabled = !authorised;
+    $('sim-signin').hidden = authorised;
+
+    $('sim-control-note').textContent = authorised
+        ? 'Staff access confirmed. Choose a test temperature.'
+        : user
+            ? 'Only staff and administrators can control the simulator.'
+            : 'Sign in with an authorised staff account to control demo temperatures.';
+}
+
+async function setSimulatorTemperature(temperature) {
+    const safeButton = $('sim-45');
+    const holdButton = $('sim-245');
+
+    safeButton.disabled = true;
+    holdButton.disabled = true;
+
+    feedback('sim-control-feedback', 'Updating simulator temperature...');
+
+    try {
+        const result = await service.setSimulatorTemperature(temperature);
+
+        feedback(
+            'sim-control-feedback',
+            `Simulator updated to ${temperature}°C. Fridge status: ${result.fridge_status}.`,
+            'success'
+        );
+
+        await Promise.allSettled([loadFridge(), loadAlerts(), loadProducts()]);
+
+        window.dispatchEvent(new Event('foodsave:simulator-updated'));
+    } catch (error) {
+        feedback('sim-control-feedback', error.message, 'error');
+    } finally {
+        updateSimulatorControls();
+    }
+}
+
+function bindSimulator() {
+    $('sim-signin').onclick = () => {
+        if (service.user) {
+            feedback(
+                'sim-control-feedback',
+                'Sign out and use an authorised staff account.',
+                'error'
+            );
+        } else {
+            openAuth();
+        }
+    };
+
+    $('sim-45').onclick = () => setSimulatorTemperature(4.5);
+    $('sim-245').onclick = () => setSimulatorTemperature(24.5);
+
+    updateSimulatorControls();
 }
 
 function bindAuth() {

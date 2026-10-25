@@ -3,114 +3,48 @@
 "use strict";
 window.FOODSAVE_SEED={"products":[{"batch_id":1,"name":"Lasagna Ready Meal","category_id":1,"original_price_pence":550,"discounted_price_pence":440,"quantity_available":4,"sell_by_at":"2026-10-16T20:30:29Z","availability_status":"AVAILABLE","image":"lasagna","category":"Ready meal","portion":"400 g","description":"400 g · Database seed product","allergens":["gluten","milk","egg"],"source":"database seed","allergens_json":["gluten","milk","egg"],"status":"past_sell_by","allergens_supplied":true},{"batch_id":2,"name":"Veggie Curry","category_id":1,"original_price_pence":480,"discounted_price_pence":360,"quantity_available":6,"sell_by_at":"2026-10-15T20:30:29Z","availability_status":"AVAILABLE","image":"curry","category":"Ready meal","portion":"350 g","description":"350 g · Database seed product","allergens":["milk"],"source":"database seed","allergens_json":["milk"],"status":"past_sell_by","allergens_supplied":true},{"batch_id":3,"name":"Croissant 2-pack","category_id":2,"original_price_pence":200,"discounted_price_pence":160,"quantity_available":10,"sell_by_at":"2026-10-17T20:30:29Z","availability_status":"AVAILABLE","image":"croissant","category":"Bakery","portion":"2 × 60 g (120 g)","description":"2 × 60 g (120 g) · Database seed product","allergens":["gluten","milk"],"source":"database seed","allergens_json":["gluten","milk"],"status":"past_sell_by","allergens_supplied":true},{"batch_id":4,"name":"Sourdough Loaf","category_id":2,"original_price_pence":350,"discounted_price_pence":298,"quantity_available":2,"sell_by_at":"2026-10-19T20:30:29Z","availability_status":"AVAILABLE","image":"bread","category":"Bakery","portion":"800 g","description":"800 g · Database seed product","allergens":["gluten"],"source":"database seed","allergens_json":["gluten"],"status":"available","allergens_supplied":true},{"batch_id":5,"name":"Apples","category_id":3,"original_price_pence":100,"discounted_price_pence":60,"quantity_available":12,"sell_by_at":null,"availability_status":"AVAILABLE","image":"apples","category":"Fruit & Vegetables","portion":"1 kg bag","description":"1 kg bag · Product-list demonstration addition","allergens":[],"source":"document demo","allergens_json":[],"status":"available","allergens_supplied":false},{"batch_id":6,"name":"Sandwich (single)","category_id":1,"original_price_pence":257,"discounted_price_pence":180,"quantity_available":8,"sell_by_at":null,"availability_status":"AVAILABLE","image":"sandwich","category":"Ready meal","portion":"200 g","description":"200 g · Product-list demonstration addition","allergens":[],"source":"document demo","allergens_json":[],"status":"available","allergens_supplied":false},{"batch_id":7,"name":"Bread Pack","category_id":2,"original_price_pence":200,"discounted_price_pence":120,"quantity_available":6,"sell_by_at":null,"availability_status":"AVAILABLE","image":"bread","category":"Bakery","portion":"400 g","description":"400 g · Product-list demonstration addition","allergens":[],"source":"document demo","allergens_json":[],"status":"available","allergens_supplied":false},{"batch_id":8,"name":"Yoghurt Pack","category_id":4,"original_price_pence":150,"discounted_price_pence":75,"quantity_available":10,"sell_by_at":null,"availability_status":"AVAILABLE","image":"yoghurt","category":"Dairy","portion":"4 × 125 g (500 g)","description":"4 × 125 g (500 g) · Product-list demonstration addition","allergens":[],"source":"document demo","allergens_json":[],"status":"available","allergens_supplied":false},{"batch_id":9,"name":"Sandwich Pack (2 sandwiches)","category_id":1,"original_price_pence":300,"discounted_price_pence":210,"quantity_available":5,"sell_by_at":null,"availability_status":"AVAILABLE","image":"sandwich","category":"Ready meal","portion":"2 × 200 g (400 g)","description":"2 × 200 g (400 g) · Product-list demonstration addition","allergens":[],"source":"document demo","allergens_json":[],"status":"available","allergens_supplied":false},{"batch_id":10,"name":"Mixed Vegetables","category_id":3,"original_price_pence":180,"discounted_price_pence":108,"quantity_available":7,"sell_by_at":null,"availability_status":"AVAILABLE","image":"vegetables","category":"Fruit & Vegetables","portion":"500 g pack","description":"500 g pack · Product-list demonstration addition","allergens":[],"source":"document demo","allergens_json":[],"status":"available","allergens_supplied":false}]};
 class AppError extends Error {
-    constructor(message, code = 'CLIENT_ERROR', status = 0) {
-        super(message);
-        this.name = 'AppError';
-        this.code = code;
-        this.status = status;
-    }
+  constructor(message, code='CLIENT_ERROR', status=0) {super(message); this.name='AppError'; this.code=code; this.status=status;}
+}
+const money = pence => Number.isInteger(pence) ? new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(pence/100) : 'Not supplied';
+function positiveId(value,label='ID') {if(!Number.isSafeInteger(value)||value<1)throw new AppError(`${label} must be a positive integer.`,'VALIDATION');return value;}
+function quantity(value) {if(!Number.isSafeInteger(value)||value<1)throw new AppError('Enter a whole-number quantity of at least one.','VALIDATION');return value;}
+function normalizeProduct(raw,profile='pence') {
+  if(!raw||typeof raw!=='object')throw new AppError('The server returned an invalid product.','CONTRACT');
+  positiveId(raw.batch_id,'Product ID');
+  if(typeof raw.name!=='string'||!raw.name.trim())throw new AppError('A product name is missing.','CONTRACT');
+  if(!Number.isSafeInteger(raw.quantity_available)||raw.quantity_available<0)throw new AppError('The server returned invalid stock.','CONTRACT');
+  const fromGbp = n => typeof n==='number'&&Number.isFinite(n)&&n>=0&&Math.abs(n*100-Math.round(n*100))<0.00001?Math.round(n*100):null;
+  const original=profile==='gbp'?fromGbp(raw.original_price):raw.original_price_pence;
+  const current=profile==='gbp'?fromGbp(raw.current_price):raw.discounted_price_pence;
+  if(!Number.isSafeInteger(original)||original<0||!Number.isSafeInteger(current)||current<0)throw new AppError('The server must supply original and current prices in the configured format.','CONTRACT');
+  let allergens=raw.allergens??raw.allergens_json;
+  if(typeof allergens==='string'){try{allergens=JSON.parse(allergens);}catch{allergens=null;}}
+  const allergensSupplied=raw.allergens_supplied!==undefined?raw.allergens_supplied:Array.isArray(allergens);
+  const status=String(raw.status??raw.availability_status??'unavailable').toLowerCase();
+  return {...raw,original_price_pence:original,discounted_price_pence:current,category:typeof raw.category==='string'?raw.category:'Other',status,allergens:Array.isArray(allergens)?allergens.filter(a=>typeof a==='string'):[],allergens_supplied:allergensSupplied,sell_by_at:raw.sell_by_at??null};
+}
+function canReserve(product){return product.status==='available'&&product.quantity_available>0&&product.can_reserve!==false;}
+function expiryText(value,now=Date.now()){
+ if(typeof value!=='string'||!value)return 'Expiry not supplied';
+ if(!/(Z|[+-]\d{2}:?\d{2})$/i.test(value))return 'Sell-by: '+value.replace('T',' ')+' (timezone awaiting confirmation)';
+ const remaining=Date.parse(value)-now;
+ if(!Number.isFinite(remaining))return 'Expiry unavailable';
+ if(remaining<=0)return 'Sell-by time reached · checking availability';
+ const minutes=Math.ceil(remaining/60000),days=Math.floor(minutes/1440),hours=Math.floor(minutes%1440/60);
+ return (days?days+'d ':'')+(hours?hours+'h ':'')+(minutes%60)+'m remaining';
 }
 
-const money = pence => Number.isInteger(pence) ? new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP'
-}).format(pence / 100) : 'Not supplied';
-
-function positiveId(value, label = 'ID') {
-    if (!Number.isSafeInteger(value) || value < 1) throw new AppError(`${label} must be a positive integer.`, 'VALIDATION');
-    return value;
+function createProductPayload(form,profile='pence') {
+  const name=String(form.name??'').trim();if(!name||name.length>150)throw new AppError('Enter a product name of up to 150 characters.','VALIDATION');
+  positiveId(form.category_id,'Category');quantity(form.quantity_available);
+  if(!Number.isSafeInteger(form.original_price_pence)||form.original_price_pence<0)throw new AppError('Enter a valid non-negative price with up to two decimal places.','VALIDATION');
+  if(!form.sell_by_at||Number.isNaN(Date.parse(form.sell_by_at)))throw new AppError('Enter a valid sell-by date and time.','VALIDATION');
+  const common={name,category_id:form.category_id,sell_by_at:new Date(form.sell_by_at).toISOString()};
+  if(profile==='gbp')return {...common,original_price:form.original_price_pence/100,quantity:form.quantity_available,allergens:form.allergens};
+  return {...common,original_price_pence:form.original_price_pence,quantity_available:form.quantity_available,allergens_json:form.allergens};
 }
-
-function quantity(value) {
-    if (!Number.isSafeInteger(value) || value < 1) throw new AppError('Enter a whole-number quantity of at least one.', 'VALIDATION');
-    return value;
-}
-
-function normalizeProduct(raw, profile = 'pence') {
-    if (!raw || typeof raw !== 'object') throw new AppError('The server returned an invalid product.', 'CONTRACT');
-    positiveId(raw.batch_id, 'Product ID');
-    if (typeof raw.name !== 'string' || !raw.name.trim()) throw new AppError('A product name is missing.', 'CONTRACT');
-    if (!Number.isSafeInteger(raw.quantity_available) || raw.quantity_available < 0) throw new AppError('The server returned invalid stock.', 'CONTRACT');
-    const fromGbp = n => typeof n === 'number' && Number.isFinite(n) && n >= 0 && Math.abs(n * 100 - Math.round(n * 100)) < 0.00001 ? Math.round(n * 100) : null;
-    const original = profile === 'gbp' ? fromGbp(raw.original_price) : raw.original_price_pence;
-    const current = profile === 'gbp' ? fromGbp(raw.current_price) : raw.discounted_price_pence;
-    if (!Number.isSafeInteger(original) || original < 0 || !Number.isSafeInteger(current) || current < 0) throw new AppError('The server must supply original and current prices in the configured format.', 'CONTRACT');
-    let allergens = raw.allergens ?? raw.allergens_json;
-    if (typeof allergens === 'string') {
-        try {
-            allergens = JSON.parse(allergens);
-        } catch {
-            allergens = null;
-        }
-    }
-    const allergensSupplied = raw.allergens_supplied !== undefined ? raw.allergens_supplied : Array.isArray(allergens);
-    const status = String(raw.status ?? raw.availability_status ?? 'unavailable').toLowerCase();
-    return {
-        ...raw,
-        original_price_pence: original,
-        discounted_price_pence: current,
-        category: typeof raw.category === 'string' ? raw.category : 'Other',
-        status,
-        allergens: Array.isArray(allergens) ? allergens.filter(a => typeof a === 'string') : [],
-        allergens_supplied: allergensSupplied,
-        sell_by_at: raw.sell_by_at ?? null
-    };
-}
-
-function canReserve(product) {
-    return product.status === 'available' && product.quantity_available > 0 && product.can_reserve !== false;
-}
-
-function expiryText(value, now = Date.now()) {
-    if (typeof value !== 'string' || !value) return 'Expiry not supplied';
-    if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(value)) return 'Sell-by: ' + value.replace('T', ' ') + ' (timezone awaiting confirmation)';
-    const remaining = Date.parse(value) - now;
-    if (!Number.isFinite(remaining)) return 'Expiry unavailable';
-    if (remaining <= 0) return 'Sell-by time reached · checking availability';
-    const minutes = Math.ceil(remaining / 60000), days = Math.floor(minutes / 1440),
-        hours = Math.floor(minutes % 1440 / 60);
-    return (days ? days + 'd ' : '') + (hours ? hours + 'h ' : '') + (minutes % 60) + 'm remaining';
-}
-
-function createProductPayload(form, profile = 'pence') {
-    const name = String(form.name ?? '').trim();
-    if (!name || name.length > 150) throw new AppError('Enter a product name of up to 150 characters.', 'VALIDATION');
-    positiveId(form.category_id, 'Category');
-    quantity(form.quantity_available);
-    if (!Number.isSafeInteger(form.original_price_pence) || form.original_price_pence < 0) throw new AppError('Enter a valid non-negative price with up to two decimal places.', 'VALIDATION');
-    if (!form.sell_by_at || Number.isNaN(Date.parse(form.sell_by_at))) throw new AppError('Enter a valid sell-by date and time.', 'VALIDATION');
-    const common = {name, category_id: form.category_id, sell_by_at: new Date(form.sell_by_at).toISOString()};
-    if (profile === 'gbp') return {
-        ...common,
-        original_price: form.original_price_pence / 100,
-        quantity: form.quantity_available,
-        allergens: form.allergens
-    };
-    return {
-        ...common,
-        original_price_pence: form.original_price_pence,
-        quantity_available: form.quantity_available,
-        allergens_json: form.allergens
-    };
-}
-
-function priceInputToPence(text) {
-    if (!/^\d+(\.\d{1,2})?$/.test(String(text))) throw new AppError('Enter a price such as 5.50.', 'VALIDATION');
-    const result = Math.round(Number(text) * 100);
-    if (!Number.isSafeInteger(result)) throw new AppError('Price is too large.', 'VALIDATION');
-    return result;
-}
-
-function formatDate(value) {
-    if (typeof value === 'string' && !/(Z|[+-]\d{2}:?\d{2})$/i.test(value)) return value.replace('T', ' ') + ' (timezone unconfirmed)';
-    if (!value) return 'Not supplied';
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? 'Not supplied' : new Intl.DateTimeFormat('en-GB', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-        timeZone: 'Europe/London'
-    }).format(date) + ' (UK)';
-}
+function priceInputToPence(text){if(!/^\d+(\.\d{1,2})?$/.test(String(text)))throw new AppError('Enter a price such as 5.50.','VALIDATION');const result=Math.round(Number(text)*100);if(!Number.isSafeInteger(result))throw new AppError('Price is too large.','VALIDATION');return result;}
+function formatDate(value){if(typeof value==='string'&&!/(Z|[+-]\d{2}:?\d{2})$/i.test(value))return value.replace('T',' ')+' (timezone unconfirmed)';if(!value)return 'Not supplied';const date=new Date(value);return Number.isNaN(date.getTime())?'Not supplied':new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/London'}).format(date)+' (UK)';}
 
 
 function createApi(config, fetcher = globalThis.fetch) {
@@ -178,6 +112,21 @@ function createApi(config, fetcher = globalThis.fetch) {
         mode: 'api', sessionOnlyReservations: false,
         get user() {
             return user;
+        },
+                async setSimulatorTemperature(temperature) {
+            if (temperature !== 4.5 && temperature !== 24.5) {
+                throw new AppError('Choose 4.5°C or 24.5°C.', 'VALIDATION');
+            }
+
+            if (!user || !['ADMIN', 'STAFF'].includes(user.role)) {
+                throw new AppError('Staff or admin access required.', 'AUTH', 403);
+            }
+
+            return request('/simulator/temperature', {
+                method: 'POST',
+                body: {temperature},
+                protectedRequest: true
+            });
         },
         products,
         async product(id) {
@@ -644,6 +593,7 @@ async function loadReservations() {
     }
 
     feedback('reservations-feedback', 'Loading reservations…');
+
     try {
         reservations = await service.reservations();
         renderReservations();
@@ -952,6 +902,7 @@ function bind() {
     $('reservation-filter').onchange = renderReservations;
     $('refresh-reservations').onclick = safe(loadReservations);
     $('refresh-status').onclick = () => Promise.allSettled([loadFridge(), loadAlerts()]);
+        bindSimulator();
     $('refresh-staff').onclick = async () => {
         await Promise.allSettled([loadProducts(), loadReports(), loadReservations()]);
         $('save-batch').disabled = false;
@@ -982,10 +933,72 @@ function renderAccount() {
     const user = service.user;
     $('account-button').textContent = user ? 'Sign out — ' + user.display_name : 'Sign in';
     $('auth-note').textContent = user ? 'Signed in as ' + user.display_name : 'Sign in to reserve food.';
+        updateSimulatorControls();
 }
 
 function openAuth() {
     if (!$('auth-dialog').open) $('auth-dialog').showModal();
+}
+function updateSimulatorControls() {
+    const user = service.user;
+    const authorised = !mock && ['ADMIN', 'STAFF'].includes(user?.role);
+
+    $('sim-45').disabled = !authorised;
+    $('sim-245').disabled = !authorised;
+    $('sim-signin').hidden = authorised;
+
+    $('sim-control-note').textContent = authorised
+        ? 'Staff access confirmed. Choose a test temperature.'
+        : user
+            ? 'Only staff and administrators can control the simulator.'
+            : 'Sign in with an authorised staff account to control demo temperatures.';
+}
+
+async function setSimulatorTemperature(temperature) {
+    const safeButton = $('sim-45');
+    const holdButton = $('sim-245');
+
+    safeButton.disabled = true;
+    holdButton.disabled = true;
+
+    feedback('sim-control-feedback', 'Updating simulator temperature...');
+
+    try {
+        const result = await service.setSimulatorTemperature(temperature);
+
+        feedback(
+            'sim-control-feedback',
+            `Simulator updated to ${temperature}°C. Fridge status: ${result.fridge_status}.`,
+            'success'
+        );
+
+        await Promise.allSettled([loadFridge(), loadAlerts(), loadProducts()]);
+
+        window.dispatchEvent(new Event('foodsave:simulator-updated'));
+    } catch (error) {
+        feedback('sim-control-feedback', error.message, 'error');
+    } finally {
+        updateSimulatorControls();
+    }
+}
+
+function bindSimulator() {
+    $('sim-signin').onclick = () => {
+        if (service.user) {
+            feedback(
+                'sim-control-feedback',
+                'Sign out and use an authorised staff account.',
+                'error'
+            );
+        } else {
+            openAuth();
+        }
+    };
+
+    $('sim-45').onclick = () => setSimulatorTemperature(4.5);
+    $('sim-245').onclick = () => setSimulatorTemperature(24.5);
+
+    updateSimulatorControls();
 }
 
 function bindAuth() {

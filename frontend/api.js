@@ -66,6 +66,21 @@ export function createApi(config, fetcher = globalThis.fetch) {
         get user() {
             return user;
         },
+                async setSimulatorTemperature(temperature) {
+            if (temperature !== 4.5 && temperature !== 24.5) {
+                throw new AppError('Choose 4.5°C or 24.5°C.', 'VALIDATION');
+            }
+
+            if (!user || !['ADMIN', 'STAFF'].includes(user.role)) {
+                throw new AppError('Staff or admin access required.', 'AUTH', 403);
+            }
+
+            return request('/simulator/temperature', {
+                method: 'POST',
+                body: {temperature},
+                protectedRequest: true
+            });
+        },
         products,
         async product(id) {
             positiveId(id);
