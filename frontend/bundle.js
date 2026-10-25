@@ -329,6 +329,9 @@ const photos = {
     'sandwich pack (2 sandwiches)': 'sandwich-pack',
     'sandwich pack': 'sandwich-pack',
     'mixed vegetables': 'vegetables'
+    'red apples': 'apples',
+    'green apples': 'green-apples',
+    'mixed apples pack': 'mixed-apples',
 };
 
 function node(tag, text, cls) {
@@ -372,6 +375,36 @@ function showMode() {
 
 function productImage(p) {
     const img = node('img');
+    const name = String(p.name || '').toLowerCase().trim();
+
+    let known = photos[name];
+
+    if (name === 'apples') {
+        const applePhotos = {
+            17: 'apples',
+            23: 'green-apples',
+            24: 'mixed-apples'
+        };
+
+        known = applePhotos[Number(p.batch_id)] || 'apples';
+    }
+
+    img.src = known
+        ? `assets/${known}.jpg`
+        : 'assets/placeholder.svg';
+
+    img.alt = `${p.name} — illustrative photograph`;
+    img.loading = 'lazy';
+    img.width = 900;
+    img.height = 620;
+
+    img.onerror = () => {
+        img.onerror = null;
+        img.src = 'assets/placeholder.svg';
+    };
+
+    return img;
+}    const img = node('img');
 
     const name = String(p.name || '').toLowerCase().trim();
 
