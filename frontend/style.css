@@ -3,3 +3,51 @@
 .price del{display:block;font-size:12px;color:var(--muted);font-weight:400}.price small{display:block;font-size:10px}.card-bottom{align-items:end}
 /* Functional workspace extensions share the catalogue's existing visual language. */
 .workspace-heading{display:flex;justify-content:space-between;align-items:center;gap:20px}.workspace-heading h1{font-size:46px}.staff-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:24px}.staff-layout .info{margin-top:0}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}form label{display:block;font-weight:600;font-size:12px;margin:16px 0 6px}form input,form select{display:block;width:100%;padding:12px;border:1px solid #c7d0c5;background:white;border-radius:3px;color:var(--ink)}form .primary{margin-top:20px}.notice{padding:14px 18px;background:#e9eddf;font-size:13px;border-left:3px solid var(--green)}.feedback{padding:16px 18px;border:1px solid var(--line);border-radius:3px;background:white;margin:14px 0;font-size:13px}.feedback.error{background:#fff3ed;border-color:#d9a38b;color:#6b3020}.feedback.success{background:#edf3e8}.feedback.loading{color:var(--muted)}.feedback button{margin-left:15px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0 25px}.stat{padding:22px;background:white;border:1px solid var(--line)}.stat strong{display:block;font:normal 32px Georgia,serif;margin-top:8px}.stat span{font-size:12px;color:var(--muted)}.staff-note{margin-top:35px;border-top:1px solid var(--line);padding-top:20px}.stock-row{display:flex;justify-content:space-between;gap:15px;padding:12px 0;border-bottom:1px solid var(--line);font-size:12px}.reservation-filter{max-width:270px;margin:15px 0}.reservation h2{font-size:26px;margin:10px 0}.reservation-actions{display:flex;gap:10px}.badge.cancelled{background:#f1efec}.badge.collected{background:#e4efdf}.badge.reserved{background:#fff0cf}.alert-item{padding:14px 0;border-bottom:1px solid var(--line)}.alert-item p{font-size:13px;margin:5px 0}.alert-item strong{font-size:12px}.quantity-row{display:flex;align-items:center;gap:12px;margin:20px 0}.quantity-row input{max-width:90px;padding:10px;border:1px solid #c7d0c5}.detail-body .price{margin:15px 0}.confirm-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:25px}.info summary{cursor:pointer;font-weight:600}.last-updated{font-size:11px;color:var(--muted)}#staff-stock{max-height:390px;overflow:auto}.image-placeholder{background:#e7ecdf}.screen-reader{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.error-link{padding:10px 14px}.detail-body img{border-radius:3px}#confirm-dialog{max-width:460px}#mode-banner{min-height:32px}.card-bottom .primary{min-height:42px}.nav{min-height:40px}#add-batch[aria-busy="true"],#collect-form[aria-busy="true"]{opacity:.75}@media(max-width:850px){.staff-layout{grid-template-columns:1fr}.workspace-heading{align-items:flex-start;flex-direction:column;margin-bottom:20px}}@media(max-width:600px){.form-row{grid-template-columns:1fr;gap:0}.stats{gap:8px}.stat{padding:13px}.stat strong{font-size:25px}.stat span{font-size:10px}.workspace-heading h1{font-size:38px}.reservation-actions{flex-wrap:wrap}}
+
+
+/* IoT readings — designed as an extension of Florin's green/cream palette. */
+.iot-panel{background:linear-gradient(135deg,#e8efe7 0%,#f1f3e8 54%,#e7eee4 100%);border:1px solid #d3ded0;border-radius:16px;padding:clamp(20px,3.2vw,38px);margin:8px 0 26px;position:relative;overflow:hidden}
+.iot-panel::before{content:'';position:absolute;width:320px;height:320px;border-radius:50%;border:1px solid #d4dfd2;right:-190px;top:-220px;pointer-events:none}
+.iot-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;position:relative}
+.iot-panel-heading .eyebrow{font-size:10px;letter-spacing:2.2px;color:#48705e;margin-bottom:9px}
+.iot-panel-heading h2{font:normal clamp(30px,3.3vw,43px)/1.18 Georgia,serif;letter-spacing:-1.15px;margin:0 0 10px;color:#193b32}
+.iot-heading-dot{color:#6f9e72}
+.iot-lead{font-size:14px;color:#587066;margin:0 0 24px}
+.iot-live-caption{display:flex;gap:9px;align-items:center;border:1px solid #c5d8c8;border-radius:25px;background:#f8fbf6;font-size:11px;padding:8px 12px;color:#315b46;white-space:nowrap;margin-top:6px}
+.iot-live-indicator{height:7px;width:7px;border-radius:50%;background:#559c6f;box-shadow:0 0 0 3px #559c6f20;flex:none}
+.iot-sensor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;position:relative}
+.iot-reading-card{min-width:0;border:1px solid #d5e1d7;border-radius:13px;background:white;padding:clamp(18px,2.5vw,28px);box-shadow:0 10px 32px #173f2810;display:flex;flex-direction:column;position:relative}
+.iot-reading-card.iot-real{border-top:4px solid #307652}
+.iot-reading-card.iot-sim{border-top:4px solid #d2aa6b}
+.iot-reading-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.iot-device-symbol{width:42px;height:42px;display:grid;place-items:center;background:#eaf3ea;color:#2d6c50;border-radius:13px;font-size:24px;line-height:1;flex:none}
+.iot-sim .iot-device-symbol{background:#f7efdf;color:#906b32}
+.iot-device-title{min-width:0}
+.iot-device-title h3{font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;letter-spacing:-.3px;margin:1px 0 0;line-height:1.3;color:#1c3d31}
+.iot-device-eyebrow{font-size:9px;letter-spacing:1.4px;color:#688075;font-weight:700}
+.iot-type-chip{align-self:flex-start;display:inline-block;background:#e8f2e9;color:#2b694a;border-radius:20px;font-size:10px;font-weight:700;padding:5px 11px}
+.iot-sim .iot-type-chip{background:#f8f0df;color:#8a6531}
+.iot-measure{display:flex;align-items:baseline;gap:6px;margin:13px 0 16px;color:#173b2e}
+.iot-number{font-size:clamp(49px,6.2vw,76px);font-weight:700;letter-spacing:-3.5px;font-variant-numeric:tabular-nums;line-height:1.05}
+.iot-unit{font-size:23px;font-weight:500;color:#72917f}
+.iot-empty{color:#9db3a8}
+.iot-reading-condition{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;margin-bottom:19px;min-height:20px}
+.iot-condition-dot{width:8px;height:8px;border-radius:50%;flex:none;background:#a5b0a6}
+.iot-condition-ok{color:#2c7550}.iot-condition-ok .iot-condition-dot{background:#38a269}
+.iot-condition-error{color:#a44b36}.iot-condition-error .iot-condition-dot{background:#d4774b}
+.iot-condition-idle{color:#657c6f}
+.iot-reading-footer{border-top:1px solid #e6ede7;padding-top:14px;display:flex;gap:9px;justify-content:space-between;align-items:end;flex-wrap:wrap;margin-top:auto}
+.iot-reading-time{display:flex;flex-direction:column;gap:2px}
+.iot-small-label{font-size:9px;letter-spacing:1.1px;font-weight:700;color:#8a9b90}
+.iot-time-value{font-size:11px;color:#4c6758;font-variant-numeric:tabular-nums}
+.iot-active-label{font-size:10px;font-weight:700;background:#f5ebd5;color:#8c632a;padding:5px 9px;border-radius:5px}
+.iot-panel-bottom{position:relative;margin-top:20px;padding:19px 21px;border:1px solid #cfded0;border-radius:11px;background:#ffffffbd;display:flex;gap:15px;color:#284c3c}
+.iot-description-icon{font:bold 16px Georgia,serif;background:#2b6348;color:white;border-radius:50%;width:26px;height:26px;display:grid;place-items:center;flex:none}
+.iot-panel-bottom strong{font-size:13px}
+.iot-panel-bottom p{font-size:12px;color:#536b5f;line-height:1.7;margin:5px 0 0}
+.iot-panel-bottom .iot-safety-note{color:#6b5c3e}
+.iot-status-source{font-size:12px;font-weight:700;color:#536e5d!important;padding-top:12px;border-top:1px solid var(--line)}
+.iot-loading,.iot-unavailable{grid-column:1/-1;background:white;padding:25px;border:1px solid #d5e1d7;border-radius:12px;color:#536b5f}
+.iot-unavailable p{font-size:12px;margin-bottom:0}
+@media(max-width:800px){.iot-panel-heading{flex-direction:column;gap:3px}.iot-live-caption{margin:0 0 17px}.iot-lead{margin-bottom:6px}}
+@media(max-width:570px){.iot-panel{padding:17px;margin:12px 0 22px;border-radius:12px}.iot-sensor-grid{grid-template-columns:1fr;gap:12px}.iot-reading-card{padding:19px}.iot-number{font-size:60px}.iot-panel-bottom{padding:15px;gap:10px}.iot-panel-heading h2{font-size:32px}.iot-lead{font-size:13px}.iot-live-caption{font-size:10px;white-space:normal}.iot-reading-footer{align-items:center}}

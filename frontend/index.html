@@ -1,12 +1,965 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Discover good food, reserve your favourites and help reduce campus food waste. FoodSave Smart student prototype."><title>FoodSave Smart — Good food. Better shared.</title><link rel="stylesheet" href="style.css"></head>
-<body><noscript><p class="notice">Enable JavaScript to browse food and use reservations.</p></noscript><a class="skip" href="#main">Skip to content</a><div class="demo" id="mode-banner" role="status">Loading FoodSave Smart…</div><header><a class="brand" href="#browse" aria-label="FoodSave Smart home"><span class="brandmark">f.</span>FoodSave<span>Smart</span></a><nav aria-label="Main navigation"><button class="nav active" data-view="browse">Browse food</button><button class="nav" data-view="reservations">My reservations <span id="reservation-count">0</span></button><button class="nav" data-view="status">Fridge & alerts</button><button class="nav" data-view="staff" id="staff-nav">Staff workspace</button></nav><button id="account-button" class="secondary" hidden>Sign in</button></header>
-<main id="main"><section id="browse" class="view"><div class="hero"><div class="hero-copy"><p class="eyebrow">GOOD FOOD. BETTER SHARED.</p><h1>A little less waste.<br>A lot to enjoy.</h1><p class="intro">Discover food worth saving. Find a favourite, reserve your portion and collect on campus.</p><a class="primary" href="#food">Find your next bite <span aria-hidden="true">↗</span></a><div class="hero-note"><span class="dot"></span> Simple reservations. Thoughtful choices.</div></div><div class="hero-image"><img src="assets/salad.jpg" alt="Colourful salad bowl with fresh vegetables" fetchpriority="high"><div class="image-caption"><span>FRESH IDEAS, LESS WASTE</span><strong>Good for your plate.<br>Better for the planet.</strong></div></div></div>
-<div class="steps"><span><b>01</b> Find something you love</span><span><b>02</b> Reserve in a few clicks</span><span><b>03</b> Collect on campus</span></div>
-<section id="food" aria-labelledby="food-title"><div class="section-head"><div><p class="eyebrow">THE CAMPUS SELECTION</p><h2 id="food-title">Something good is waiting.</h2></div><p>Product-list prices · GBP</p></div><div class="toolbar"><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Search food…" aria-label="Search food"></label><label class="sort">Sort by<select id="sort"><option value="featured">Featured</option><option value="price">Price: low to high</option><option value="quantity">Most available</option></select></label></div><div id="filters" class="filters" role="group" aria-label="Food categories"></div><p class="muted" id="catalogue-note"></p><div id="catalogue-feedback"></div><p id="result-count" class="muted" aria-live="polite"></p><div id="products" class="grid"></div></section>
-<section class="closing"><div><p class="eyebrow">SMALL CHOICES. SHARED IMPACT.</p><h2>Enjoy more. Waste less.</h2><p>Every reservation is a chance to give good food a place at the table.</p></div><div class="closing-symbol" aria-hidden="true">↗</div></section></section>
-<section id="reservations" class="view" hidden aria-labelledby="reservations-title"><div class="workspace-heading"><div><p class="eyebrow">READY WHEN YOU ARE</p><h1 id="reservations-title">My reservations</h1><p class="intro">Keep track of your food, from reservation to collection.</p></div><button id="refresh-reservations" class="secondary">Refresh reservations</button></div><p id="reservation-scope" class="notice" hidden></p><div id="reservations-feedback"></div><label class="sort reservation-filter">Show<select id="reservation-filter"><option value="all">All reservations</option><option value="reserved">Active</option><option value="collected">Collected</option><option value="cancelled">Cancelled</option></select></label><div id="reservation-list"></div></section>
-<section id="status" class="view" hidden aria-labelledby="status-title"><div class="workspace-heading"><div><p class="eyebrow">CAMPUS COLLECTION</p><h1 id="status-title">Fridge & alerts</h1><p class="intro">Collection information and the latest available updates.</p></div><button id="refresh-status" class="secondary">Refresh updates</button></div><div class="status-grid"><article class="info" aria-labelledby="fridge-title"><h2 id="fridge-title">Fridge status</h2><div id="fridge-content"></div></article><article class="info" aria-labelledby="alerts-title"><h2 id="alerts-title">Alerts</h2><div id="alerts-content"></div></article></div><p class="muted">Temperature readings alone do not confirm food safety. Follow the product label and collection staff’s instructions.</p></section>
-<section id="staff" class="view" hidden aria-labelledby="staff-title"><div class="workspace-heading"><div><p class="eyebrow">A BETTER WAY TO SHARE</p><h1 id="staff-title">Staff workspace</h1><p class="intro">Add food, confirm collection and see confirmed collection totals.</p></div><button id="refresh-staff" class="secondary">Refresh workspace</button></div><p id="staff-mode-note" class="notice"></p><div id="staff-reports" class="stats"></div><div class="staff-layout"><section class="info"><h2>Add a food batch</h2><p class="muted">Use the original product label for dates, ingredients and allergens.</p><form id="add-batch"><label for="batch-name">Product name</label><input id="batch-name" name="name" required maxlength="150" autocomplete="off"><div class="form-row"><div><label for="batch-category">Category</label><select id="batch-category" required></select></div><div><label for="batch-price">Original price (£)</label><input id="batch-price" inputmode="decimal" placeholder="5.50" required pattern="[0-9]+([.][0-9]{1,2})?"></div></div><div class="form-row"><div><label for="batch-quantity">Quantity available</label><input id="batch-quantity" type="number" required min="1" step="1"></div><div><label for="batch-date">Sell-by date & time (your local time)</label><input id="batch-date" type="datetime-local" required></div></div><label for="batch-allergens">Allergens (separate with commas)</label><input id="batch-allergens" placeholder="e.g. gluten, milk" maxlength="500"><p class="muted">Confirm the full label. Leaving this blank records no supplied allergen list.</p><button class="primary" id="save-batch">Save batch</button><div id="batch-feedback"></div></form></section><section class="info"><h2>Confirm a collection</h2><p>Enter the reservation reference supplied by the student. Confirm the reference and quantity before recording collection.</p><form id="collect-form"><label for="collection-id">Reservation reference</label><input id="collection-id" type="number" min="1" step="1" required><button class="primary" id="collect-button">Review collection</button></form><div id="collection-feedback"></div><div class="staff-note"><h3>Inventory overview</h3><p class="muted">Read-only stock from the current data source. Refresh after staff actions.</p><div id="staff-stock"></div></div></section></div></section></main>
-<footer><a class="brand" href="#browse">FoodSave<span>Smart</span></a><p>Good food. Better shared.</p><small>CPU4106 · Front-end by Florin Tompi<br><span id="footer-mode">Independent front-end review</span> · <a href="inventory.html">Earlier inventory</a></small></footer>
-<dialog id="details" aria-labelledby="dialog-title"><button class="close" aria-label="Close product details">×</button><div id="detail-content"></div></dialog><dialog id="confirm-dialog" aria-labelledby="confirm-title"><div class="detail-body"><h2 id="confirm-title">Confirm action</h2><p id="confirm-copy"></p><div class="confirm-actions"><button id="confirm-no" class="secondary">Go back</button><button id="confirm-yes" class="primary">Confirm</button></div></div></dialog><dialog id="auth-dialog" aria-labelledby="auth-title"><div class="detail-body"><button type="button" id="auth-close" class="secondary">Close</button><h2 id="auth-title">Your FoodSave Smart account</h2><p id="auth-note">Sign in to reserve food.</p><form id="auth-form"><label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="username" required><label for="auth-password">Password</label><input id="auth-password" type="password" autocomplete="current-password" required maxlength="128"><button id="auth-submit" class="primary">Sign in</button><div id="auth-feedback"></div></form><details><summary>Create a student account</summary><form id="register-form"><label for="register-name">Display name</label><input id="register-name" minlength="2" maxlength="100" autocomplete="name" required><label for="register-email">Email</label><input id="register-email" type="email" autocomplete="email" required><label for="register-password">Password (8–128 characters)</label><input id="register-password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required><button id="register-submit" class="primary">Create account</button><div id="register-feedback"></div></form></details></div></dialog><div id="toast" role="status" aria-live="polite"></div><script src="config.js"></script><script src="bundle.js"></script></body></html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description"
+          content="Discover good food, reserve your favourites and help reduce campus food waste. FoodSave Smart student prototype.">
+    <title>FoodSave Smart — Good food. Better shared.</title>
+    <link rel="stylesheet" href="style.css">
+    <style id="foodsave-iot-styles">/* Self-contained IoT hotfix styling. */
+
+    .iot-panel {
+        background: linear-gradient(135deg, #e8efe7 0%, #f1f3e8 54%, #e7eee4 100%);
+        border: 1px solid #d3ded0;
+        border-radius: 16px;
+        padding: clamp(20px, 3.2vw, 38px);
+        margin: 8px 0 26px;
+        position: relative;
+        overflow: hidden
+    }
+
+    .iot-panel::before {
+        content: '';
+        position: absolute;
+        width: 320px;
+        height: 320px;
+        border-radius: 50%;
+        border: 1px solid #d4dfd2;
+        right: -190px;
+        top: -220px;
+        pointer-events: none
+    }
+
+    .iot-panel-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        position: relative
+    }
+
+    .iot-panel-heading .eyebrow {
+        font-size: 10px;
+        letter-spacing: 2.2px;
+        color: #48705e;
+        margin-bottom: 9px
+    }
+
+    .iot-panel-heading h2 {
+        font: normal clamp(30px, 3.3vw, 43px)/1.18 Georgia, serif;
+        letter-spacing: -1.15px;
+        margin: 0 0 10px;
+        color: #193b32
+    }
+
+    .iot-heading-dot {
+        color: #6f9e72
+    }
+
+    .iot-lead {
+        font-size: 14px;
+        color: #587066;
+        margin: 0 0 24px
+    }
+
+    .iot-live-caption {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+        border: 1px solid #c5d8c8;
+        border-radius: 25px;
+        background: #f8fbf6;
+        font-size: 11px;
+        padding: 8px 12px;
+        color: #315b46;
+        white-space: nowrap;
+        margin-top: 6px
+    }
+
+    .iot-live-indicator {
+        height: 7px;
+        width: 7px;
+        border-radius: 50%;
+        background: #559c6f;
+        box-shadow: 0 0 0 3px #559c6f20;
+        flex: none
+    }
+
+    .iot-sensor-grid {
+        display: grid;
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        position: relative
+    }
+
+    .iot-reading-card {
+        min-width: 0;
+        border: 1px solid #d5e1d7;
+        border-radius: 13px;
+        background: white;
+        padding: clamp(18px, 2.5vw, 28px);
+        box-shadow: 0 10px 32px #173f2810;
+        display: flex;
+        flex-direction: column;
+        position: relative
+    }
+
+    .iot-reading-card.iot-real {
+        border-top: 4px solid #307652
+    }
+
+    .iot-reading-card.iot-sim {
+        border-top: 4px solid #d2aa6b
+    }
+
+    .iot-reading-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px
+    }
+
+    .iot-device-symbol {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        background: #eaf3ea;
+        color: #2d6c50;
+        border-radius: 13px;
+        font-size: 24px;
+        line-height: 1;
+        flex: none
+    }
+
+    .iot-sim .iot-device-symbol {
+        background: #f7efdf;
+        color: #906b32
+    }
+
+    .iot-device-title {
+        min-width: 0
+    }
+
+    .iot-device-title h3 {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -.3px;
+        margin: 1px 0 0;
+        line-height: 1.3;
+        color: #1c3d31
+    }
+
+    .iot-device-eyebrow {
+        font-size: 9px;
+        letter-spacing: 1.4px;
+        color: #688075;
+        font-weight: 700
+    }
+
+    .iot-type-chip {
+        align-self: flex-start;
+        display: inline-block;
+        background: #e8f2e9;
+        color: #2b694a;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 5px 11px
+    }
+
+    .iot-sim .iot-type-chip {
+        background: #f8f0df;
+        color: #8a6531
+    }
+
+    .iot-measure {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        margin: 13px 0 16px;
+        color: #173b2e
+    }
+
+    .iot-number {
+        font-size: clamp(49px, 6.2vw, 76px);
+        font-weight: 700;
+        letter-spacing: -3.5px;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.05
+    }
+
+    .iot-unit {
+        font-size: 23px;
+        font-weight: 500;
+        color: #72917f
+    }
+
+    .iot-empty {
+        color: #9db3a8
+    }
+
+    .iot-reading-condition {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 19px;
+        min-height: 20px
+    }
+
+    .iot-condition-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex: none;
+        background: #a5b0a6
+    }
+
+    .iot-condition-ok {
+        color: #2c7550
+    }
+
+    .iot-condition-ok .iot-condition-dot {
+        background: #38a269
+    }
+
+    .iot-condition-error {
+        color: #a44b36
+    }
+
+    .iot-condition-error .iot-condition-dot {
+        background: #d4774b
+    }
+
+    .iot-condition-idle {
+        color: #657c6f
+    }
+
+    .iot-reading-footer {
+        border-top: 1px solid #e6ede7;
+        padding-top: 14px;
+        display: flex;
+        gap: 9px;
+        justify-content: space-between;
+        align-items: end;
+        flex-wrap: wrap;
+        margin-top: auto
+    }
+
+    .iot-reading-time {
+        display: flex;
+        flex-direction: column;
+        gap: 2px
+    }
+
+    .iot-small-label {
+        font-size: 9px;
+        letter-spacing: 1.1px;
+        font-weight: 700;
+        color: #8a9b90
+    }
+
+    .iot-time-value {
+        font-size: 11px;
+        color: #4c6758;
+        font-variant-numeric: tabular-nums
+    }
+
+    .iot-active-label {
+        font-size: 10px;
+        font-weight: 700;
+        background: #f5ebd5;
+        color: #8c632a;
+        padding: 5px 9px;
+        border-radius: 5px
+    }
+
+    .iot-panel-bottom {
+        position: relative;
+        margin-top: 20px;
+        padding: 19px 21px;
+        border: 1px solid #cfded0;
+        border-radius: 11px;
+        background: #ffffffbd;
+        display: flex;
+        gap: 15px;
+        color: #284c3c
+    }
+
+    .iot-description-icon {
+        font: bold 16px Georgia, serif;
+        background: #2b6348;
+        color: white;
+        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        display: grid;
+        place-items: center;
+        flex: none
+    }
+
+    .iot-panel-bottom strong {
+        font-size: 13px
+    }
+
+    .iot-panel-bottom p {
+        font-size: 12px;
+        color: #536b5f;
+        line-height: 1.7;
+        margin: 5px 0 0
+    }
+
+    .iot-panel-bottom .iot-safety-note {
+        color: #6b5c3e
+    }
+
+    .iot-status-source {
+        font-size: 12px;
+        font-weight: 700;
+        color: #536e5d !important;
+        padding-top: 12px;
+        border-top: 1px solid var(--line)
+    }
+
+    .iot-loading, .iot-unavailable {
+        grid-column: 1/-1;
+        background: white;
+        padding: 25px;
+        border: 1px solid #d5e1d7;
+        border-radius: 12px;
+        color: #536b5f
+    }
+
+    .iot-unavailable p {
+        font-size: 12px;
+        margin-bottom: 0
+    }
+
+    @media (max-width: 800px) {
+        .iot-panel-heading {
+            flex-direction: column;
+            gap: 3px
+        }
+
+        .iot-live-caption {
+            margin: 0 0 17px
+        }
+
+        .iot-lead {
+            margin-bottom: 6px
+        }
+    }
+
+    @media (max-width: 570px) {
+        .iot-panel {
+            padding: 17px;
+            margin: 12px 0 22px;
+            border-radius: 12px
+        }
+
+        .iot-sensor-grid {
+            grid-template-columns:1fr;
+            gap: 12px
+        }
+
+        .iot-reading-card {
+            padding: 19px
+        }
+
+        .iot-number {
+            font-size: 60px
+        }
+
+        .iot-panel-bottom {
+            padding: 15px;
+            gap: 10px
+        }
+
+        .iot-panel-heading h2 {
+            font-size: 32px
+        }
+
+        .iot-lead {
+            font-size: 13px
+        }
+
+        .iot-live-caption {
+            font-size: 10px;
+            white-space: normal
+        }
+
+        .iot-reading-footer {
+            align-items: center
+        }
+    }
+
+    /* IoT connectivity status: old readings must never look live. */
+    .iot-stale-warning {
+        font-size: 11px;
+        font-weight: 700;
+        color: #a44b36;
+        margin: -4px 0 15px
+    }
+
+    .iot-reading-card:has(.iot-stale-warning) .iot-number {
+        color: #8c968e
+    }
+
+    /* Staff-only scenario testing — follows the existing FoodSave Smart palette. */
+    .iot-demo-controls {
+        margin-top: 19px;
+        background: #fff;
+        border: 1px solid #d4dfd4;
+        border-radius: 13px;
+        padding: clamp(17px, 2.4vw, 25px);
+        box-shadow: 0 9px 26px #173f2810
+    }
+
+    .iot-demo-controls-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px
+    }
+
+    .iot-demo-controls-header h3 {
+        font: normal clamp(23px, 2.8vw, 30px)/1.2 Georgia, serif;
+        margin: 6px 0 7px;
+        color: #193b32
+    }
+
+    .iot-demo-controls-header p {
+        margin: 0;
+        color: #597268;
+        font-size: 12px;
+        line-height: 1.6
+    }
+
+    .iot-demo-eyebrow {
+        font-size: 9px !important;
+        letter-spacing: 1.5px;
+        color: #427359 !important;
+        font-weight: 700
+    }
+
+    .iot-demo-lock {
+        flex: none;
+        background: #f1f3ea;
+        color: #516b5a;
+        padding: 7px 10px;
+        border-radius: 24px;
+        font-size: 10px;
+        font-weight: 700
+    }
+
+    .iot-demo-actions {
+        display: grid;
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin: 19px 0 14px
+    }
+
+    .iot-demo-button {
+        border: 1px solid #b4d4bf !important;
+        border-radius: 10px;
+        padding: 15px !important;
+        text-align: left;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        cursor: pointer !important;
+        background: #e7f5e9 !important;
+        color: #174d34 !important;
+        line-height: 1.2
+    }
+
+    .iot-demo-button span {
+        font-size: clamp(23px, 3vw, 32px);
+        font-weight: 700
+    }
+
+    .iot-demo-button small {
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.4
+    }
+
+    .iot-demo-hold {
+        background: #fff1e8 !important;
+        border-color: #e4c4b0 !important;
+        color: #943c26 !important
+    }
+
+    .iot-demo-button:disabled {
+        opacity: .5 !important;
+        cursor: not-allowed !important
+    }
+
+    .iot-demo-button:not(:disabled):hover {
+        filter: brightness(.96)
+    }
+
+    .iot-demo-button:focus-visible {
+        outline: 3px solid #4d91bf;
+        outline-offset: 2px
+    }
+
+    .iot-demo-help {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap
+    }
+
+    .iot-demo-help p {
+        margin: 0;
+        color: #506b60;
+        font-size: 12px;
+        flex: 1 1 250px
+    }
+
+    .iot-demo-help button {
+        font-size: 12px !important;
+        padding: 8px 12px !important
+    }
+
+    #sim-control-feedback:not(:empty) {
+        margin: 12px 0 0;
+        font-size: 13px
+    }
+
+    .iot-demo-disclaimer {
+        color: #7a6854;
+        font-size: 11px;
+        line-height: 1.5;
+        margin: 16px 0 0;
+        padding-top: 12px;
+        border-top: 1px solid #e7e9df
+    }
+
+    @media (max-width: 570px) {
+        .iot-demo-actions {
+            grid-template-columns:1fr
+        }
+
+        .iot-demo-controls-header {
+            flex-direction: column
+        }
+
+        .iot-demo-lock {
+            align-self: flex-start
+        }
+
+        .iot-demo-button {
+            padding: 12px !important
+        }
+    }
+    </style>
+</head>
+<body>
+<noscript><p class="notice">Enable JavaScript to browse food and use reservations.</p></noscript>
+<a class="skip" href="#main">Skip to content</a>
+<div class="demo" id="mode-banner" role="status">Loading FoodSave Smart…</div>
+<header><a class="brand" href="#browse" aria-label="FoodSave Smart home"><span class="brandmark">f.</span>FoodSave<span>Smart</span></a>
+    <nav aria-label="Main navigation">
+        <button class="nav active" data-view="browse">Browse food</button>
+        <button class="nav" data-view="reservations">My reservations <span id="reservation-count">0</span></button>
+        <button class="nav" data-view="status">Fridge & alerts</button>
+        <button class="nav" data-view="staff" id="staff-nav">Staff workspace</button>
+    </nav>
+    <button id="account-button" class="secondary" hidden>Sign in</button>
+</header>
+<main id="main">
+    <section id="browse" class="view">
+        <div class="hero">
+            <div class="hero-copy"><p class="eyebrow">GOOD FOOD. BETTER SHARED.</p>
+                <h1>A little less waste.<br>A lot to enjoy.</h1>
+                <p class="intro">Discover food worth saving. Find a favourite, reserve your portion and collect on
+                    campus.</p><a class="primary" href="#food">Find your next bite <span aria-hidden="true">↗</span></a>
+                <div class="hero-note"><span class="dot"></span> Simple reservations. Thoughtful choices.</div>
+            </div>
+            <div class="hero-image"><img src="assets/salad.jpg" alt="Colourful salad bowl with fresh vegetables"
+                                         fetchpriority="high">
+                <div class="image-caption"><span>FRESH IDEAS, LESS WASTE</span><strong>Good for your plate.<br>Better
+                    for the planet.</strong></div>
+            </div>
+        </div>
+        <div class="steps">
+            <span><b>01</b> Find something you love</span><span><b>02</b> Reserve in a few clicks</span><span><b>03</b> Collect on campus</span>
+        </div>
+        <section id="food" aria-labelledby="food-title">
+            <div class="section-head">
+                <div><p class="eyebrow">THE CAMPUS SELECTION</p>
+                    <h2 id="food-title">Something good is waiting.</h2></div>
+                <p>Product-list prices · GBP</p></div>
+            <div class="toolbar"><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search"
+                                                                                               placeholder="Search food…"
+                                                                                               aria-label="Search food"></label><label
+                    class="sort">Sort by<select id="sort">
+                <option value="featured">Featured</option>
+                <option value="price">Price: low to high</option>
+                <option value="quantity">Most available</option>
+            </select></label></div>
+            <div id="filters" class="filters" role="group" aria-label="Food categories"></div>
+            <p class="muted" id="catalogue-note"></p>
+            <div id="catalogue-feedback"></div>
+            <p id="result-count" class="muted" aria-live="polite"></p>
+            <div id="products" class="grid"></div>
+        </section>
+        <section class="closing">
+            <div><p class="eyebrow">SMALL CHOICES. SHARED IMPACT.</p>
+                <h2>Enjoy more. Waste less.</h2>
+                <p>Every reservation is a chance to give good food a place at the table.</p></div>
+            <div class="closing-symbol" aria-hidden="true">↗</div>
+        </section>
+    </section>
+    <section id="reservations" class="view" hidden aria-labelledby="reservations-title">
+        <div class="workspace-heading">
+            <div><p class="eyebrow">READY WHEN YOU ARE</p>
+                <h1 id="reservations-title">My reservations</h1>
+                <p class="intro">Keep track of your food, from reservation to collection.</p></div>
+            <button id="refresh-reservations" class="secondary">Refresh reservations</button>
+        </div>
+        <p id="reservation-scope" class="notice" hidden></p>
+        <div id="reservations-feedback"></div>
+        <label class="sort reservation-filter">Show<select id="reservation-filter">
+            <option value="all">All reservations</option>
+            <option value="reserved">Active</option>
+            <option value="collected">Collected</option>
+            <option value="cancelled">Cancelled</option>
+        </select></label>
+        <div id="reservation-list"></div>
+    </section>
+    <section id="status" class="view" hidden aria-labelledby="status-title">
+        <div class="workspace-heading">
+            <div><p class="eyebrow">CAMPUS COLLECTION</p>
+                <h1 id="status-title">Fridge & alerts</h1>
+                <p class="intro">Collection information and the latest available updates.</p></div>
+            <button id="refresh-status" class="secondary">Refresh updates</button>
+        </div>
+        <section class="iot-panel" aria-labelledby="iot-title">
+            <div class="iot-panel-heading">
+                <div><p class="eyebrow">CONNECTED MONITORING · IoT DEMONSTRATION</p>
+                    <h2 id="iot-title">Temperature monitoring<span class="iot-heading-dot" aria-hidden="true">.</span>
+                    </h2>
+                    <p class="iot-lead">One physical sensor. One test simulator. Two separate data streams.</p></div>
+                <div class="iot-live-caption"><span class="iot-live-indicator" aria-hidden="true"></span><span>Readings supplied by the team API</span>
+                </div>
+            </div>
+            <div id="iot-monitor" class="iot-sensor-grid" aria-live="polite"><p class="iot-loading">Loading temperature
+                readings…</p></div>
+            <section class="iot-demo-controls" aria-labelledby="iot-demo-title">
+                <div class="iot-demo-controls-header">
+                    <div><p class="iot-demo-eyebrow">STAFF · LIVE RESERVATION DEMO</p>
+                        <h3 id="iot-demo-title">Simulate fridge temperature</h3>
+                        <p>Choose a test reading. The backend updates the fridge status and food reservation
+                            availability.</p></div>
+                    <span class="iot-demo-lock">Staff access only</span></div>
+                <div class="iot-demo-actions">
+                    <button id="sim-45" class="iot-demo-button iot-demo-safe" type="button" disabled>
+                        <span>4.5°C</span><small>SAFE · Allow reservations</small></button>
+                    <button id="sim-245" class="iot-demo-button iot-demo-hold" type="button" disabled>
+                        <span>24.5°C</span><small>HOLD · Block reservations</small></button>
+                </div>
+                <div class="iot-demo-help"><p id="sim-control-note">Sign in with an authorised staff account to control
+                    demo temperatures.</p>
+                    <button id="sim-signin" type="button" class="secondary">Staff sign in</button>
+                </div>
+                <div id="sim-control-feedback" role="status" aria-live="polite"></div>
+                <p class="iot-demo-disclaimer">Demonstration only. A simulated SAFE state does not certify physical food
+                    safety. The actual ESP32 reading remains separate.</p></section>
+            <div class="iot-panel-bottom">
+                <div class="iot-description-icon" aria-hidden="true">i</div>
+                <div><strong>About this IoT demonstration</strong>
+                    <p>Readings from the ESP32 come directly from a physical DHT11 sensor to demonstrate real IoT
+                        functionality. The simulator sends test temperatures for development and testing; these are not
+                        measurements of the actual fridge.</p>
+                    <p class="iot-safety-note">The collection status currently uses the simulator. Neither stream alone
+                        confirms that food is safe to eat.</p></div>
+            </div>
+        </section>
+        <div class="status-grid">
+            <article class="info" aria-labelledby="fridge-title"><h2 id="fridge-title">Fridge status</h2>
+                <div id="fridge-content"></div>
+            </article>
+            <article class="info" aria-labelledby="alerts-title"><h2 id="alerts-title">Alerts</h2>
+                <div id="alerts-content"></div>
+            </article>
+        </div>
+        <p class="muted">Temperature readings alone do not confirm food safety. Follow the product label and collection
+            staff’s instructions.</p></section>
+    <section id="staff" class="view" hidden aria-labelledby="staff-title">
+        <div class="workspace-heading">
+            <div><p class="eyebrow">A BETTER WAY TO SHARE</p>
+                <h1 id="staff-title">Staff workspace</h1>
+                <p class="intro">Add food, confirm collection and see confirmed collection totals.</p></div>
+            <button id="refresh-staff" class="secondary">Refresh workspace</button>
+        </div>
+        <p id="staff-mode-note" class="notice"></p>
+        <div id="staff-reports" class="stats"></div>
+        <div class="staff-layout">
+            <section class="info"><h2>Add a food batch</h2>
+                <p class="muted">Use the original product label for dates, ingredients and allergens.</p>
+                <form id="add-batch"><label for="batch-name">Product name</label><input id="batch-name" name="name"
+                                                                                        required maxlength="150"
+                                                                                        autocomplete="off">
+                    <div class="form-row">
+                        <div><label for="batch-category">Category</label><select id="batch-category" required></select>
+                        </div>
+                        <div><label for="batch-price">Original price (£)</label><input id="batch-price"
+                                                                                       inputmode="decimal"
+                                                                                       placeholder="5.50" required
+                                                                                       pattern="[0-9]+([.][0-9]{1,2})?">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div><label for="batch-quantity">Quantity available</label><input id="batch-quantity"
+                                                                                          type="number" required min="1"
+                                                                                          step="1"></div>
+                        <div><label for="batch-date">Sell-by date & time (your local time)</label><input id="batch-date"
+                                                                                                         type="datetime-local"
+                                                                                                         required></div>
+                    </div>
+                    <label for="batch-allergens">Allergens (separate with commas)</label><input id="batch-allergens"
+                                                                                                placeholder="e.g. gluten, milk"
+                                                                                                maxlength="500">
+                    <p class="muted">Confirm the full label. Leaving this blank records no supplied allergen list.</p>
+                    <button class="primary" id="save-batch">Save batch</button>
+                    <div id="batch-feedback"></div>
+                </form>
+            </section>
+            <section class="info"><h2>Confirm a collection</h2>
+                <p>Enter the reservation reference supplied by the student. Confirm the reference and quantity before
+                    recording collection.</p>
+                <form id="collect-form"><label for="collection-id">Reservation reference</label><input
+                        id="collection-id" type="number" min="1" step="1" required>
+                    <button class="primary" id="collect-button">Review collection</button>
+                </form>
+                <div id="collection-feedback"></div>
+                <div class="staff-note"><h3>Inventory overview</h3>
+                    <p class="muted">Read-only stock from the current data source. Refresh after staff actions.</p>
+                    <div id="staff-stock"></div>
+                </div>
+            </section>
+        </div>
+    </section>
+</main>
+<footer><a class="brand" href="#browse">FoodSave<span>Smart</span></a>
+    <p>Good food. Better shared.</p><small>CPU4106 · Front-end by Florin Tompi<br><span id="footer-mode">Independent front-end review</span>
+        · <a href="inventory.html">Earlier inventory</a></small></footer>
+<dialog id="details" aria-labelledby="dialog-title">
+    <button class="close" aria-label="Close product details">×</button>
+    <div id="detail-content"></div>
+</dialog>
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+    <div class="detail-body"><h2 id="confirm-title">Confirm action</h2>
+        <p id="confirm-copy"></p>
+        <div class="confirm-actions">
+            <button id="confirm-no" class="secondary">Go back</button>
+            <button id="confirm-yes" class="primary">Confirm</button>
+        </div>
+    </div>
+</dialog>
+<dialog id="auth-dialog" aria-labelledby="auth-title">
+    <div class="detail-body">
+        <button type="button" id="auth-close" class="secondary">Close</button>
+        <h2 id="auth-title">Your FoodSave Smart account</h2>
+        <p id="auth-note">Sign in to reserve food.</p>
+        <form id="auth-form"><label for="auth-email">Email</label><input id="auth-email" type="email"
+                                                                         autocomplete="username" required><label
+                for="auth-password">Password</label><input id="auth-password" type="password"
+                                                           autocomplete="current-password" required maxlength="128">
+            <button id="auth-submit" class="primary">Sign in</button>
+            <div id="auth-feedback"></div>
+        </form>
+        <details>
+            <summary>Create a student account</summary>
+            <form id="register-form"><label for="register-name">Display name</label><input id="register-name"
+                                                                                           minlength="2" maxlength="100"
+                                                                                           autocomplete="name" required><label
+                    for="register-email">Email</label><input id="register-email" type="email" autocomplete="email"
+                                                             required><label for="register-password">Password (8–128
+                characters)</label><input id="register-password" type="password" minlength="8" maxlength="128"
+                                          autocomplete="new-password" required>
+                <button id="register-submit" class="primary">Create account</button>
+                <div id="register-feedback"></div>
+            </form>
+        </details>
+    </div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="config.js"></script>
+<script id="foodsave-iot-hotfix">
+    (() => {
+        'use strict';
+        const ROOT_ID = 'iot-monitor';
+        // Two missed 30-second reports plus one grace interval.
+        const OFFLINE_AFTER_MS = 90000;
+        const DEVICE_SPECS = [
+            {
+                id: 'esp32-01',
+                title: 'Physical ESP32',
+                eyebrow: 'REAL SENSOR · DHT11',
+                badge: 'Physical reading',
+                style: 'real',
+                symbol: '◉'
+            },
+            {
+                id: 'simulator-01',
+                title: 'Temperature simulator',
+                eyebrow: 'SOFTWARE · TEST DATA',
+                badge: 'Simulated reading',
+                style: 'sim',
+                symbol: '⌁'
+            }
+        ];
+        const el = (tag, content, css) => {
+            const item = document.createElement(tag);
+            if (content !== undefined) item.textContent = String(content);
+            if (css) item.className = css;
+            return item;
+        };
+
+        function readingTime(value) {
+            if (typeof value !== 'string' || !value.trim()) return 'Not supplied';
+            const raw = value.trim();
+            const plain = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/);
+            if (plain) return `${plain[3]}/${plain[2]}/${plain[1]} · ${plain[4]}:${plain[5]} (UTC, server time)`;
+            const timestamp = Date.parse(raw);
+            if (!Number.isFinite(timestamp)) return 'Timestamp unavailable';
+            return new Intl.DateTimeFormat('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZoneName: 'short'
+            }).format(new Date(timestamp));
+        }
+
+        function readingAge(value) {
+            if (typeof value !== 'string' || !value.trim()) return null;
+            const raw = value.trim();
+            // MySQL DATETIME from the team API is UTC but has no zone suffix.
+            const zoned = /^\d{4}-\d\d-\d\d[T ]\d\d:\d\d(?::\d\d(?:\.\d+)?)?$/.test(raw)
+                ? raw.replace(' ', 'T') + 'Z' : raw;
+            const timestamp = Date.parse(zoned);
+            if (!Number.isFinite(timestamp)) return null;
+            return Date.now() - timestamp;
+        }
+
+        function freshness(reading) {
+            if (!reading) return 'missing';
+            const age = readingAge(reading.received_at);
+            if (age === null || age < -300000) return 'unknown';
+            if (age > OFFLINE_AFTER_MS) return 'offline';
+            if (reading.sensor_status === 'error') return 'error';
+            if (reading.sensor_status === 'ok' && typeof reading.temperature === 'number' && Number.isFinite(reading.temperature)) return 'online';
+            return 'unknown';
+        }
+
+        function draw(data) {
+            const target = document.getElementById(ROOT_ID);
+            if (!target) return;
+            target.replaceChildren();
+            const readings = data?.latest_readings && typeof data.latest_readings === 'object' ? data.latest_readings : {};
+            for (const spec of DEVICE_SPECS) {
+                const reading = readings[spec.id] && typeof readings[spec.id] === 'object' ? readings[spec.id] : null;
+                const state = freshness(reading);
+                const valid = reading?.sensor_status === 'ok' && typeof reading.temperature === 'number' && Number.isFinite(reading.temperature);
+                const isLive = state === 'online';
+                const card = el('article', undefined, 'iot-reading-card iot-' + spec.style);
+                const top = el('div', undefined, 'iot-reading-top');
+                const symbol = el('span', spec.symbol, 'iot-device-symbol');
+                symbol.setAttribute('aria-hidden', 'true');
+                const heading = el('div', undefined, 'iot-device-title');
+                heading.append(el('span', spec.eyebrow, 'iot-device-eyebrow'), el('h3', spec.title));
+                top.append(symbol, heading);
+                card.append(top, el('span', spec.badge, 'iot-type-chip'));
+                const measure = el('div', undefined, 'iot-measure');
+                measure.append(el('strong', valid ? reading.temperature.toFixed(1) : '—', 'iot-number' + (valid ? '' : ' iot-empty')), el('span', '°C', 'iot-unit'));
+                card.append(measure);
+                const conditionClass = isLive ? 'iot-condition-ok' : state === 'offline' || state === 'error' ? 'iot-condition-error' : 'iot-condition-idle';
+                const condition = el('div', undefined, 'iot-reading-condition ' + conditionClass);
+                const dot = el('span', undefined, 'iot-condition-dot');
+                dot.setAttribute('aria-hidden', 'true');
+                const status = state === 'missing' ? 'Awaiting first reading' : state === 'offline' ? 'OFFLINE · No readings in the last 90 seconds' : state === 'error' ? 'SENSOR ERROR · Device reported a failed reading' : state === 'online' ? 'ONLINE · Sensor OK' : 'Status unknown · Check the device timestamp';
+                condition.append(dot, el('span', status));
+                card.append(condition);
+                if (valid && !isLive) card.append(el('p', 'Last stored temperature · not a live reading', 'iot-stale-warning'));
+                const foot = el('div', undefined, 'iot-reading-footer');
+                const time = el('div', undefined, 'iot-reading-time');
+                time.append(el('span', 'LAST READING', 'iot-small-label'), el('span', readingTime(reading?.received_at), 'iot-time-value'));
+                foot.append(time);
+                if (data?.active_device_id === spec.id) foot.append(el('span', 'Controls collection status', 'iot-active-label'));
+                card.append(foot);
+                target.append(card);
+            }
+            target.setAttribute('aria-busy', 'false');
+        }
+
+        let started = false, flight = null;
+
+        async function refresh() {
+            const target = document.getElementById(ROOT_ID);
+            if (!target || !document.getElementById('status') || document.getElementById('status').hidden) return;
+            if (flight) return flight;
+            const api = (window.FOODSAVE_CONFIG?.API_BASE_URL || 'https://foodsave-smart.onrender.com/api').replace(/\/+$/, '');
+            target.setAttribute('aria-busy', 'true');
+            // Prevent indefinite Loading if the API is unreachable.
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 14000);
+            flight = (async () => {
+                try {
+                    const response = await fetch(api + '/fridge/status', {
+                        headers: {Accept: 'application/json'},
+                        cache: 'no-store',
+                        signal: controller.signal
+                    });
+                    if (!response.ok) throw Error('API returned HTTP ' + response.status);
+                    const data = await response.json();
+                    if (!data || typeof data !== 'object' || !data.latest_readings) throw Error('Temperature data is missing from the API response');
+                    draw(data);
+                } catch (error) {
+                    target.replaceChildren();
+                    const box = el('div', undefined, 'iot-unavailable');
+                    box.append(el('strong', 'Temperature readings unavailable'), el('p', 'The fridge API could not be loaded. Please use Refresh updates or try again shortly.'));
+                    box.append(el('small', error.name === 'AbortError' ? 'Request timed out' : error.message));
+                    target.append(box);
+                    target.setAttribute('aria-busy', 'false');
+                } finally {
+                    clearTimeout(timeout);
+                    flight = null;
+                }
+            })();
+            return flight;
+        }
+
+        function start() {
+            if (started) return;
+            started = true;
+            const status = document.getElementById('status');
+            if (!status) return;
+            const update = () => {
+                if (!status.hidden) refresh();
+            };
+            document.getElementById('refresh-status')?.addEventListener('click', () => setTimeout(update, 50));
+            document.querySelector('button[data-view="status"]')?.addEventListener('click', () => setTimeout(update, 100));
+            window.addEventListener('hashchange', () => setTimeout(update, 100));
+            window.addEventListener('foodsave:simulator-updated', () => setTimeout(update, 100));
+            setTimeout(update, 600);
+            setInterval(update, 30000);
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once: true}); else start();
+    })();
+</script>
+<script src="bundle.js?v=iot-sim-20261022"></script>
+</body>
+</html>
