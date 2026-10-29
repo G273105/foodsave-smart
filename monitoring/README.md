@@ -37,3 +37,26 @@ verify_backend.py targets the earlier Flask-only integration and is retained for
 Firmware setup and hardware test checklist: firmware/README.md and ../docs/monitoring-hardware-status.md. API handoff: ../docs/monitoring-handoff.md.
 
 Never commit config.h, Wi-Fi passwords, real tokens or database credentials.
+## Online integration evidence — 29 October 2026
+
+The physical ESP32 monitor communicates with the deployed Flask API over HTTPS.
+
+The photographs show:
+- The ESP32 and DHT11 hardware, with the Connection page reporting certificate verification and HTTP 201 acceptance.
+- A matching temperature of 24.5°C on the physical device and the website.
+- Separate physical ESP32 and simulator readings.
+
+### Evidence files
+
+- [ESP32 and DHT11 hardware](evidence/ESP32-DHT11.jpeg)
+- [Server API screenshot](evidence/server%20api.png)
+- [Physical device and website](evidence/WEBSERVER-ESP32.jpeg)
+
+### API endpoints
+
+- Send readings: `POST https://foodsave-smart.onrender.com/api/temperatures`
+- Read latest readings: `GET https://foodsave-smart.onrender.com/api/fridge/status`
+- Service health: `GET https://foodsave-smart.onrender.com/api/health`
+
+Physical readings use `esp32-01`. Synthetic readings use `simulator-01`.
+Humidity remains on the local display.
