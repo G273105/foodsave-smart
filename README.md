@@ -35,14 +35,14 @@ The frontend communicates with the Flask backend through API endpoints, while pe
 
 Assessors and visitors can explore FoodSave Smart using a fictional student demonstration account.
 
-### Public Demo Account — Student
+### Public Demo Account — Staff
 
 | Field | Details |
 |---|---|
 | Name | Maria (Demo User) |
 | Email | maria@example.com |
 | Password | Connect2internet@ |
-| Application role | STUDENT |
+| Application role | STAFF |
 
 The demonstration account allows users to:
 
