@@ -60,4 +60,8 @@ The photographs show:
 
 Physical readings use `esp32-01`. Synthetic readings use `simulator-01`.
 Humidity remains on the local display.
+
+## Render setup guide
+
+See the [Render setup guide](RENDER_SETUP.md) for instructions on connecting the ESP32 and Python simulator to the online backend, including HTTPS configuration, authentication and troubleshooting.
 .......................................................................................................................................................................................
