@@ -19,7 +19,9 @@ The system is implemented using Python, Flask, JavaScript and MySQL, with the fr
 
 **Frontend:** https://foodsave-smart-1.onrender.com/
 
-**Backend API:** https://foodsave-smart.onrender.com/
+**Backend API (Health Check):** https://foodsave-smart.onrender.com/api/health
+
+**Backend API (Products):** https://foodsave-smart.onrender.com/api/products
 
 **GitHub Repository:** https://github.com/G273105/foodsave-smart
 
