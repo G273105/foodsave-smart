@@ -32,7 +32,7 @@ def send_reading(url, token, payload):
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
         method="POST",
     )
-    with urlopen(request, timeout=10) as response:
+    with urlopen(request, timeout=60) as response:
         if response.status != 201:
             raise ValueError(f"Expected HTTP 201, received HTTP {response.status}")
         result = json.loads(response.read())
@@ -45,7 +45,7 @@ def send_reading(url, token, payload):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--url", default=os.getenv("TEMPERATURE_API_URL"))
+    parser.add_argument("--url", default=os.getenv("TEMPERATURE_API_URL", "https://foodsave-smart.onrender.com/api/temperatures"))
     parser.add_argument("--temperature", type=float, default=4.6)
     parser.add_argument("--sensor-error", action="store_true")
     parser.add_argument("--once", action="store_true")
