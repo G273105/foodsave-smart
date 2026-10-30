@@ -11,7 +11,9 @@ Page paintedPage = Page::Home;
 uint32_t lastGraphPaint = 0;
 size_t graphNextSample = HISTORY_CAPACITY;
 struct LabelCache { int x = -1, y = -1; String text; uint16_t colour = 0; int size = 0; };
-LabelCache labels[24];
+LabelCache labels[40];
+bool historyHumidity = false;
+bool paintedHumidity = false;
 void clearLabelCache() { for (auto &item : labels) item.x = -1; }
 constexpr uint16_t BG = 0x0863, PANEL = 0x10C5, INK = 0xFFFF, MUTED = 0xAD75, ACCENT = 0x4ED2;
 String localTimeText(time_t t, bool date = false) {
@@ -22,7 +24,7 @@ String localTimeText(time_t t, bool date = false) {
   strftime(text, sizeof(text), date ? "%d/%m/%Y %H:%M:%S" : "%H:%M:%S", &parts);
   return String(text);
 }
-void label(int x, int y, const String &text, uint16_t colour = INK, int size = 2) {
+void label(int x, int y, const String &text, uint16_t colour = INK, int size = 2, int fieldWidth = 0) {
   LabelCache *cached = nullptr;
   for (auto &item : labels) {
     if (item.x == x && item.y == y) { cached = &item; break; }
@@ -30,8 +32,8 @@ void label(int x, int y, const String &text, uint16_t colour = INK, int size = 2
   if (cached && cached->text == text && cached->colour == colour && cached->size == size) return;
   if (!cached) for (auto &item : labels) if (item.x < 0) { cached = &item; break; }
   // Compose the entire field off-screen, then transfer it without a visible erase.
-  int width = screen.width() - x - 16;
-  if (page == Page::History && y >= 100) {
+  int width = fieldWidth > 0 ? fieldWidth : screen.width() - x - 16;
+  if (!fieldWidth && page == Page::History && y >= 100) {
     width = x == 3 ? 43 : (x == screen.width()-36 ? 20 : 180);
   }
   int height = 8 * size;
@@ -56,7 +58,7 @@ void label(int x, int y, const String &text, uint16_t colour = INK, int size = 2
   if (cached) { cached->x=x; cached->y=y; cached->text=text; cached->colour=colour; cached->size=size; }
 }
 void row(int y, const char *title, const String &value) {
-  label(16, y, title, MUTED, 1);
+  label(16, y, title, MUTED, 1, 114);
   label(135, y, value, INK, 1);
 }
 void paintUi() {
@@ -80,47 +82,88 @@ void paintUi() {
     row(220, "Last accepted", monitor.acceptedOnce ? localTimeText(monitor.lastAcceptedAt) : "None");
   } else if (page == Page::Connection) {
     label(16, 65, "CONNECTION", ACCENT);
-    row(102, "Device", DEVICE_ID);
-    row(124, "Wi-Fi", WiFi.status() == WL_CONNECTED ? "Connected" : "Disconnected");
-    row(146, "API result", monitor.serverStatus);
-    row(168, "HTTP code", String(monitor.lastHttpCode));
-    row(190, "Last accepted", monitor.acceptedOnce ? localTimeText(monitor.lastAcceptedAt) : "None");
-    row(212, "Accepted age", monitor.acceptedOnce ? String((millis()-monitor.lastAcceptedMs)/1000) + " s" : "--");
-    label(16, 238, "API acceptance; database storage not verified", MUTED, 1);
+    bool online = WiFi.status() == WL_CONNECTED;
+    String api = MONITOR_API_URL;
+    api.trim();
+    int hostStart = api.indexOf("://");
+    String host = hostStart >= 0 ? api.substring(hostStart + 3) : "Not configured";
+    int slash = host.indexOf('/');
+    if (slash >= 0) host = host.substring(0, slash);
+    row(94, "Device", DEVICE_ID);
+    row(110, "Wi-Fi", online ? "Connected" : "Disconnected");
+    row(126, "IP address", online ? WiFi.localIP().toString() : "--");
+    row(142, "Signal", online ? String(WiFi.RSSI()) + " dBm" : "--");
+    row(158, "Server host", host);
+    row(174, "Transport", api.startsWith("https://") ?
+        (strlen(MONITOR_ROOT_CA) ? "HTTPS / CA verification" : "HTTPS / CA MISSING") :
+        (api.startsWith("http://") ? "HTTP / no encryption" : "Invalid URL"));
+    row(190, "Clock / token", String(clockTime() ? "Synced" : "Waiting NTP") +
+        " / " + (strlen(MONITOR_DEVICE_TOKEN) ? "Configured" : "Missing"));
+    row(206, "API result", String(monitor.serverStatus) + " (" + String(monitor.lastHttpCode) + ")");
+    row(222, "Last accepted", monitor.acceptedOnce ?
+        (monitor.lastAcceptedAt ? localTimeText(monitor.lastAcceptedAt) : "Before clock sync") : "None");
+    row(238, "Accepted age", monitor.acceptedOnce ? String((millis()-monitor.lastAcceptedMs)/1000) + " s" : "--");
+    label(16, h-54, "API acceptance only; database not verified", MUTED, 1);
+
   } else {
-    label(16, 65, "HISTORY - LAST 60 MIN", ACCENT);
-    bool graphDirty = full || graphNextSample != monitor.nextSample ||
-                      millis() - lastGraphPaint >= 30000UL;
+    label(16, 65, historyHumidity ? "HISTORY  HUMIDITY" : "HISTORY  TEMPERATURE", ACCENT, 2, w-32);
+    label(16, 86, "Tap heading: temperature / humidity", MUTED, 1, w-32);
+    bool graphDirty = full || paintedHumidity != historyHumidity ||
+                      graphNextSample != monitor.nextSample || millis()-lastGraphPaint >= 30000UL;
     if (graphDirty) {
-    lastGraphPaint = millis();
-    graphNextSample = monitor.nextSample;
-    screen.fillRect(0, 100, w, h-160, BG);
-    for (auto &item : labels) if (item.y >= 100) item.x = -1;
-    const int left=48, right=w-18, top=105, bottom=h-86;
-    float low=0, high=10;
-    for(size_t i=0;i<monitor.sampleCount;i++) {
-      const Sample &v=monitor.history[i];
-      if(v.valid && millis()-v.uptimeMs<=3600000UL) {low=fminf(low,floorf(v.temperature)-1); high=fmaxf(high,ceilf(v.temperature)+1);}
+      lastGraphPaint = millis();
+      paintedHumidity = historyHumidity;
+      graphNextSample = monitor.nextSample;
+      screen.fillRect(0, 100, w, h-136, BG);
+      for (auto &item : labels) if (item.y >= 100) item.x = -1;
+      const int left=48, right=w-18, top=110, bottom=h-104;
+      const uint32_t now=millis();
+      float low=0, high=historyHumidity ? 100 : 10, sum=0, smallest=INFINITY, largest=-INFINITY;
+      size_t good=0, errors=0;
+      for(size_t i=0;i<monitor.sampleCount;i++) {
+        const Sample &v=monitor.history[i];
+        if(now-v.uptimeMs>3600000UL) continue;
+        bool valid=historyHumidity ? v.humidityValid : v.valid;
+        float value=historyHumidity ? v.humidity : v.temperature;
+        if(!valid) {++errors;continue;}
+        ++good;sum+=value;smallest=fminf(smallest,value);largest=fmaxf(largest,value);
+        if(!historyHumidity) {low=fminf(low,floorf(value)-1);high=fmaxf(high,ceilf(value)+1);}
+      }
+      screen.drawRect(left,top,right-left+1,bottom-top+1,MUTED);
+      for(int i=1;i<4;i++) {
+        int y=top+(bottom-top)*i/4;
+        screen.drawFastHLine(left+1,y,right-left-1,PANEL);
+      }
+      String unit=historyHumidity ? "%" : "C";
+      label(3,top,String(high,0)+unit,MUTED,1,43);
+      label(3,bottom-8,String(low,0)+unit,MUTED,1,43);
+      label(left,bottom+8,"-60 min",MUTED,1,70);
+      label(right-24,bottom+8,"Now",MUTED,1,24);
+      bool previous=false;int px=0,py=0;
+      uint32_t previousMs=0;
+      size_t first=(monitor.nextSample+HISTORY_CAPACITY-monitor.sampleCount)%HISTORY_CAPACITY;
+      for(size_t i=0;i<monitor.sampleCount;i++) {
+        const Sample &v=monitor.history[(first+i)%HISTORY_CAPACITY];
+        uint32_t age=now-v.uptimeMs;
+        bool valid=historyHumidity ? v.humidityValid : v.valid;
+        float value=historyHumidity ? v.humidity : v.temperature;
+        if(!valid || age>3600000UL) {previous=false;continue;}
+        int x=right-(uint64_t(age)*(right-left)/3600000UL);
+        int y=bottom-int((value-low)/(high-low)*(bottom-top));
+        // Do not imply continuous data across a long network/measurement pause.
+        if(previous && v.uptimeMs-previousMs<=READING_INTERVAL_MS*2)
+          screen.drawLine(px,py,x,y,ACCENT);
+        screen.fillCircle(x,y,2,ACCENT);
+        px=x;py=y;previous=true;previousMs=v.uptimeMs;
+      }
+      if(!good) label(left+12,top+25,"No valid readings yet",MUTED,1,w-left-36);
+      String stats=good ? "Min " + String(smallest,1) + "  Avg " + String(sum/good,1) +
+          "  Max " + String(largest,1) + " " + unit : "Min --  Avg --  Max --";
+      label(16,h-78,stats,INK,1,w-32);
+      label(16,h-62,"Valid " + String(good) + " / Errors " + String(errors),MUTED,1,w-32);
+      label(16,h-46,"Last 60 min / RAM only / clears on restart",MUTED,1,w-32);
     }
-    screen.drawRect(left,top,right-left+1,bottom-top+1,MUTED);
-    label(3,top,String(high,0)+" C",MUTED,1);
-    label(3,bottom-8,String(low,0)+" C",MUTED,1);
-    label(left,bottom+8,"-60 min",MUTED,1);
-    label(right-18,bottom+8,"Now",MUTED,1);
-    bool previous=false; int px=0,py=0;
-    size_t first=(monitor.nextSample+HISTORY_CAPACITY-monitor.sampleCount)%HISTORY_CAPACITY;
-    for(size_t i=0;i<monitor.sampleCount;i++) {
-      const Sample &v=monitor.history[(first+i)%HISTORY_CAPACITY];
-      uint32_t age=millis()-v.uptimeMs;
-      if(!v.valid || age>3600000UL) {previous=false;continue;}
-      int x=right-(uint64_t(age)*(right-left)/3600000UL);
-      int y=bottom-int((v.temperature-low)/(high-low)*(bottom-top));
-      if(previous) screen.drawLine(px,py,x,y,ACCENT);
-      screen.fillCircle(x,y,2,ACCENT);px=x;py=y;previous=true;
-    }
-    if(!monitor.sampleCount) label(left+12,top+28,"Waiting for sensor readings",MUTED,1);
-    }
-    label(16,h-54,"RAM only; sensor errors leave gaps",MUTED,1);
+
   }
   if (full) {
   const char *tabs[]={"Home","History","Connection"};
@@ -143,7 +186,7 @@ void uiBegin() {
   screen.setTouch(calibration);
 #endif
   paintUi();
-  Serial.println("UI navigation: h=Home, g=History, c=Connection");
+  Serial.println("UI navigation: h=Home, g=History, c=Connection, t=Temperature history, u=Humidity history");
 }
 void uiTick() {
   bool dirty=false;
@@ -152,12 +195,16 @@ void uiTick() {
     if(key=='h') {page=Page::Home;dirty=true;}
     if(key=='g') {page=Page::History;dirty=true;}
     if(key=='c') {page=Page::Connection;dirty=true;}
+    if(key=='t' || key=='u') {page=Page::History;historyHumidity=key=='u';dirty=true;}
   }
 #if defined(TOUCH_CS) && MONITOR_TOUCH_CALIBRATED
   uint16_t x,y;
   bool pressed=screen.getTouch(&x,&y);
   if(pressed && !touchHeld && y>=screen.height()-34 && x<screen.width()) {
     page=static_cast<Page>(min(2,int(x)*3/screen.width()));dirty=true;
+  }
+  if(pressed && !touchHeld && page==Page::History && y>=60 && y<100 && x<screen.width()) {
+    historyHumidity=!historyHumidity;dirty=true;
   }
   touchHeld=pressed;
 #endif
