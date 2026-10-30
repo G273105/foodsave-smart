@@ -60,3 +60,4 @@ The photographs show:
 
 Physical readings use `esp32-01`. Synthetic readings use `simulator-01`.
 Humidity remains on the local display.
+.......................................................................................................................................................................................
