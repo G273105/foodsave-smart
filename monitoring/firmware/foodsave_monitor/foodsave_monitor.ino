@@ -114,7 +114,13 @@ void sendReading(bool valid) {
       xQueueOverwrite(resultQueue, &result);
       return;
     }
+    if (!clockTime()) {
+      result.status = "Waiting for NTP before TLS";
+      xQueueOverwrite(resultQueue, &result);
+      return;
+    }
     secureClient.setCACert(MONITOR_ROOT_CA);
+    secureClient.setHandshakeTimeout(20);
     started = http.begin(secureClient, url);
   } else {
     result.status = "URL must start http(s)";
@@ -126,8 +132,8 @@ void sendReading(bool valid) {
     xQueueOverwrite(resultQueue, &result);
     return;
   }
-  http.setConnectTimeout(3000);
-  http.setTimeout(5000);
+  http.setConnectTimeout(15000);
+  http.setTimeout(60000);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Authorization", String("Bearer ") + MONITOR_DEVICE_TOKEN);
   result.status = "Sending";
@@ -188,7 +194,7 @@ void takeReading() {
 void setup() {
   Serial.begin(115200);
   delay(250);
-  Serial.println("Firmware: HUMIDITY-FIX4-DIAGNOSTICS");
+  Serial.println("Firmware: RENDER-HTTPS-1");
   Serial.printf("Local HTTP allowed: %s\n", MONITOR_ALLOW_LOCAL_HTTP ? "YES" : "NO");
   String configuredUrl = MONITOR_API_URL;
   configuredUrl.trim();
